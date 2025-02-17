@@ -9,7 +9,7 @@ export default async function Layout({
   return (
     <main className="flex min-h-screen flex-col bg-[#FAFBFF] dark:bg-background">
       <Header />
-      <div className="mx-auto flex w-full max-w-7xl grow gap-5 p-5">
+      <div className="mx-auto flex w-full max-w-[1320px] grow gap-5 p-5">
         <MenuBar className="sticky top-[5.25rem] hidden h-fit flex-none rounded-lg border bg-card sm:block p-3 xl:w-80" />
         {children}
       </div>

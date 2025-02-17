@@ -10,10 +10,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { Skeleton } from "./ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 const menuItems = [
   { title: "Home", href: "/", icon: Home },
@@ -29,6 +31,7 @@ interface MenuBarProps {
 
 export default function MenuBar({ className }: MenuBarProps) {
   const currentUser = useQuery(api.users.currentUser);
+  const [avatarLoading, setAvatarLoading] = useState(true);
 
   return (
     <div className={className}>
@@ -41,10 +44,17 @@ export default function MenuBar({ className }: MenuBarProps) {
             {currentUser === undefined ? (
               <Loader className="animate-spin text-muted-foreground size-5" />
             ) : currentUser?.imageUrl ? (
-              <img
+              <Image
                 src={currentUser.imageUrl}
                 alt="Profile"
+                width={40}
+                height={40}
                 className="w-full h-full rounded-full object-cover"
+                onLoad={() => setAvatarLoading(false)}
+                style={{
+                  opacity: avatarLoading ? 0 : 1,
+                  transition: "opacity 0.5s ease-in-out",
+                }}
               />
             ) : (
               <span className="text-xl font-semibold text-muted-foreground">
