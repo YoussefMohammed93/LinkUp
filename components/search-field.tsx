@@ -29,16 +29,16 @@ export default function SearchField() {
       onSubmit={handleSubmit}
       method="GET"
       action="/search"
-      className="w-full max-w-lg"
+      className="w-full max-w-[250px] mt-1"
     >
       <div className="relative">
         <Input
           ref={inputRef}
           name="q"
           placeholder="Search"
-          className="w-full pe-10 sm:pe-12"
+          className="w-full pe-10 sm:pe-12 pl-5 rounded-full shadow-none"
         />
-        <SearchIcon className="absolute right-3 top-1/2 size-5 -translate-y-1/2 transform text-muted-foreground" />
+        <SearchIcon className="absolute right-4 top-1/2 size-5 -translate-y-1/2 transform text-muted-foreground" />
       </div>
     </form>
   );

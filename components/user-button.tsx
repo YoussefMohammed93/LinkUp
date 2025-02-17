@@ -12,12 +12,13 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "./ui/dropdown-menu";
-
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import UserAvatar from "./user-avatar";
+import { useAuth } from "@clerk/nextjs";
+import { useQuery } from "convex/react";
 import { Separator } from "./ui/separator";
-import { useAuth, useUser } from "@clerk/nextjs";
+import { api } from "@/convex/_generated/api";
 import { Check, LogOut, Monitor, Moon, Sun } from "lucide-react";
 
 interface UserButtonProps {
@@ -26,7 +27,7 @@ interface UserButtonProps {
 
 export default function UserButton({ className }: UserButtonProps) {
   const auth = useAuth();
-  const currentUser = useUser();
+  const currentUser = useQuery(api.users.currentUser);
 
   const { theme, setTheme } = useTheme();
 
@@ -38,12 +39,12 @@ export default function UserButton({ className }: UserButtonProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className={cn("flex-none rounded-full", className)}>
-          <UserAvatar avatarUrl={currentUser.user?.imageUrl} size={36} />
+          <UserAvatar avatarUrl={currentUser?.imageUrl} size={36} />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuLabel>
-          Logged in as @{currentUser.user?.fullName}
+          Logged in as @{currentUser?.firstName} {""} {currentUser?.lastName}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuSub>
