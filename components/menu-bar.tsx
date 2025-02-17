@@ -36,8 +36,8 @@ export default function MenuBar({ className }: MenuBarProps) {
         className="relative h-32 bg-cover bg-center hidden lg:block rounded-t-xl"
         style={{ backgroundImage: "url(/cover-image-placeholder.png)" }}
       >
-        <div className="absolute -bottom-10 left-4">
-          <div className="size-20 rounded-full border-4 border-card bg-secondary flex items-center justify-center">
+        <div className="absolute -bottom-8 xl:-bottom-10 left-4">
+          <div className="size-16 xl:size-20 rounded-full border-4 border-card bg-secondary flex items-center justify-center">
             {currentUser === undefined ? (
               <Loader className="animate-spin text-muted-foreground size-5" />
             ) : currentUser?.imageUrl ? (
@@ -63,7 +63,7 @@ export default function MenuBar({ className }: MenuBarProps) {
           </>
         ) : (
           <>
-            <h2 className="text-sm sm:text-base font-semibold">
+            <h2 className="text-base font-semibold">
               {currentUser?.firstName} {currentUser?.lastName}
             </h2>
             <p className="text-sm text-muted-foreground">Frontend Developer</p>

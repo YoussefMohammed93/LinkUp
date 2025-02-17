@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --font-body: var(--font-inter);
+  --font-body: var(--font-noto-sans);
   --font-mono: var(--font-jetbrains-mono);
 }
 
@@ -57,7 +57,7 @@ body {
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 85.7% 97.3%;
-    --border: 230 3.7% 20%;
+    --border: 230 3.7% 16%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
     --chart-1: 220 70% 50%;

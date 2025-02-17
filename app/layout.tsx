@@ -2,13 +2,13 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Noto_Sans, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ConvexClientProvider } from "./convex-client-provider";
 
-const inter = Inter({
+const notoSans = Noto_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-noto-sans",
   weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
@@ -35,7 +35,7 @@ export default function RootLayout({
       <html
         lang="en"
         suppressHydrationWarning
-        className={`${inter.variable} ${jetBrainsMono.variable}`}
+        className={`${notoSans.variable} ${jetBrainsMono.variable}`}
       >
         <body className="font-sans antialiased">
           <ConvexClientProvider>

@@ -26,9 +26,9 @@ export default function SearchField() {
 
   return (
     <form
-      onSubmit={handleSubmit}
       method="GET"
       action="/search"
+      onSubmit={handleSubmit}
       className="w-full max-w-[250px] mt-1"
     >
       <div className="relative">
