@@ -9,13 +9,13 @@ import {
   Loader,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useQuery } from "convex/react";
 import { Skeleton } from "./ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 
 const menuItems = [
   { title: "Home", href: "/", icon: Home },
@@ -39,6 +39,7 @@ export default function MenuBar({ className }: MenuBarProps) {
         className="relative h-32 bg-cover bg-center hidden lg:block rounded-t-xl"
         style={{ backgroundImage: "url(/cover-image-placeholder.png)" }}
       >
+        <div className="absolute inset-0 bg-gradient-to-t from-card/90 to-card/20" />
         <div className="absolute -bottom-8 xl:-bottom-10 left-4">
           <div className="size-16 xl:size-20 rounded-full border-4 border-card bg-secondary flex items-center justify-center">
             {currentUser === undefined ? (
@@ -73,38 +74,42 @@ export default function MenuBar({ className }: MenuBarProps) {
           </>
         ) : (
           <>
-            <h2 className="text-base font-semibold">
+            <h2 className="text-base font-semibold lg:px-2">
               {currentUser?.firstName} {currentUser?.lastName}
             </h2>
-            <p className="text-sm text-muted-foreground">Frontend Developer</p>
+            <p className="text-sm text-muted-foreground lg:px-2">
+              Frontend Developer
+            </p>
           </>
         )}
       </div>
-      {menuItems.map(({ title, href, icon: Icon }, index) => (
-        <Button
-          key={title}
-          variant="ghost"
-          className={cn(
-            "flex items-center justify-start gap-2 w-full py-5",
-            index === 0
-              ? "lg:rounded-tl-lg lg:rounded-tr-lg lg:rounded-b-none"
-              : index === menuItems.length - 1
-                ? "lg:rounded-bl-lg lg:rounded-br-lg lg:rounded-t-none"
-                : "lg:rounded-none",
-            index !== menuItems.length - 1 && "lg:border-b"
-          )}
-          title={title}
-          asChild
-        >
-          <Link
-            href={href}
-            className="flex items-center justify-center lg:justify-start w-full"
+      <div className="lg:p-3 lg:pt-0">
+        {menuItems.map(({ title, href, icon: Icon }, index) => (
+          <Button
+            key={title}
+            variant="ghost"
+            className={cn(
+              "flex items-center justify-start gap-2 w-full py-5 px-3",
+              index === 0
+                ? "lg:rounded-tl-lg lg:rounded-tr-lg lg:rounded-b-none"
+                : index === menuItems.length - 1
+                  ? "lg:rounded-bl-lg lg:rounded-br-lg lg:rounded-t-none"
+                  : "lg:rounded-none",
+              index !== menuItems.length - 1 && "lg:border-b"
+            )}
+            title={title}
+            asChild
           >
-            <Icon />
-            <span className="hidden lg:inline">{title}</span>
-          </Link>
-        </Button>
-      ))}
+            <Link
+              href={href}
+              className="flex items-center justify-center lg:justify-start w-full"
+            >
+              <Icon />
+              <span className="hidden lg:inline">{title}</span>
+            </Link>
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "./ui/dropdown-menu";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import UserAvatar from "./user-avatar";
@@ -19,7 +20,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { Separator } from "./ui/separator";
 import { api } from "@/convex/_generated/api";
-import { Check, LogOut, Monitor, Moon, Sun } from "lucide-react";
+import { Check, LogOut, Monitor, Moon, Sun, UserIcon } from "lucide-react";
 
 interface UserButtonProps {
   className?: string;
@@ -47,6 +48,12 @@ export default function UserButton({ className }: UserButtonProps) {
           Logged in as @{currentUser?.firstName} {""} {currentUser?.lastName}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <Link href={`/users/${currentUser?._id}`}>
+          <DropdownMenuItem>
+            <UserIcon className="mr-2 size-4" />
+            Profile
+          </DropdownMenuItem>
+        </Link>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Monitor className="mr-2 size-4" />
