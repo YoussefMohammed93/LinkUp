@@ -6,9 +6,9 @@ import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { useEdgeStore } from "@/lib/edgestore";
 import { Button } from "@/components/ui/button";
-import { Edit, Loader2, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useMutation } from "convex/react";
+import { Edit, Loader2, Upload, User } from "lucide-react";
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
 
 export default function UserPage() {
@@ -99,21 +99,21 @@ export default function UserPage() {
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
-                      Change Cover <Edit />
+                      <Edit /> Change Cover
                     </span>
                   )}
                 </Button>
               </div>
             </>
           ) : (
-            <div className="w-full h-full bg-muted relative">
+            <div className="w-full h-full bg-muted relative rounded-tl-lg rounded-tr-lg">
               <Image
                 src="/cover-image-placeholder.png"
                 alt="Cover placeholder"
                 fill
-                className="object-cover"
+                className="object-cover rounded-tl-lg rounded-tr-lg"
               />
-              <div className="absolute z-10 inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
+              <div className="absolute z-10 inset-0 flex items-center justify-center rounded-tl-lg rounded-tr-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
                 <input
                   type="file"
                   accept="image/*"
@@ -134,7 +134,13 @@ export default function UserPage() {
                   disabled={isUploading}
                   className="z-10"
                 >
-                  {isUploading ? "Uploading..." : "Upload Cover"}
+                  {isUploading ? (
+                    "Uploading..."
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Upload /> Upload Cover
+                    </span>
+                  )}
                 </Button>
               </div>
             </div>
@@ -179,6 +185,7 @@ export default function UserPage() {
                     <Button
                       variant="secondary"
                       size="sm"
+                      title="Change profie image"
                       onClick={() =>
                         document.getElementById("profile-upload")?.click()
                       }
@@ -289,7 +296,10 @@ export default function UserPage() {
                 }
               }}
             >
-              <Button variant="outline" className="gap-2 px-5 py-3 sm:py-5">
+              <Button
+                variant="outline"
+                className="gap-2 px-5 py-3 sm:py-5 shadow-none"
+              >
                 <Edit className="h-4 w-4" />
                 Edit Profile
               </Button>
@@ -314,7 +324,7 @@ export default function UserPage() {
           )}
         </div>
         <div
-          className={`rounded-lg p-4 sm:p-6 my-5 ${currentUser ? "border" : "bg-secondary"}`}
+          className={`rounded-lg p-4 sm:p-6 my-5 bg-secondary/50 ${currentUser ? "border" : "bg-secondary"}`}
         >
           <h2 className="text-lg font-semibold text-foreground/90">
             {currentUser ? "Bio" : <Skeleton className="h-6 w-24" />}
@@ -345,7 +355,7 @@ function StatCard({
   label: string;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-lg border bg-card p-4 transition-all hover:bg-accent/50">
+    <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/50">
       <div className="rounded-full bg-primary/10 p-3 text-primary">{icon}</div>
       <div>
         <div className="text-xl sm:text-2xl font-bold">{value}</div>

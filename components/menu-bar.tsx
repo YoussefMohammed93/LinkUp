@@ -35,7 +35,6 @@ export default function MenuBar({ className }: MenuBarProps) {
 
   return (
     <div className={className}>
-      {/* Cover Section */}
       <div className="relative h-32 hidden lg:block rounded-t-xl">
         {currentUser === undefined ? (
           <Skeleton className="h-full w-full rounded-t-xl rounded-b-none animate-pulse" />
@@ -43,14 +42,10 @@ export default function MenuBar({ className }: MenuBarProps) {
           <div
             className="h-full w-full bg-cover bg-center rounded-t-xl"
             style={{
-              backgroundImage: currentUser?.coverImageUrl
-                ? `url(${currentUser.coverImageUrl})`
-                : "none",
+              backgroundImage: `url(${currentUser?.coverImageUrl || "/cover-image-placeholder.png"})`,
             }}
           />
         )}
-
-        {/* Avatar Section */}
         <div className="absolute -bottom-8 xl:-bottom-10 left-4">
           <div className="size-16 xl:size-20 rounded-full border-4 border-card bg-secondary flex items-center justify-center">
             {currentUser === undefined ? (
@@ -77,8 +72,6 @@ export default function MenuBar({ className }: MenuBarProps) {
           </div>
         </div>
       </div>
-
-      {/* User Info Section */}
       <div className="pt-14 pb-5 px-4 hidden lg:block">
         {currentUser === undefined ? (
           <>
@@ -96,8 +89,6 @@ export default function MenuBar({ className }: MenuBarProps) {
           </>
         )}
       </div>
-
-      {/* Menu Items */}
       <div className="w-full flex sm:flex-col lg:p-3 lg:pt-0">
         {menuItems.map(({ title, href, icon: Icon }, index) => (
           <Button

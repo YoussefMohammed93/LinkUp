@@ -12,4 +12,15 @@ export default defineSchema({
     imageUrl: v.optional(v.string()),
     coverImageUrl: v.optional(v.union(v.string(), v.null())),
   }).index("byClerkUserId", ["clerkUserId"]),
+
+  posts: defineTable({
+    content: v.string(),
+    authorId: v.id("users"),
+    authorName: v.string(),
+    authorImageUrl: v.optional(v.string()),
+    images: v.optional(v.array(v.string())),
+    createdAt: v.number(),
+  })
+    .index("byAuthor", ["authorId"])
+    .index("byCreationTime", ["createdAt"]),
 });

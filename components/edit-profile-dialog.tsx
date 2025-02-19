@@ -1,5 +1,6 @@
 "use client";
 
+import * as z from "zod";
 import {
   Dialog,
   DialogContent,
@@ -7,9 +8,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-import * as z from "zod";
-import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
@@ -83,10 +81,8 @@ export function EditProfileDialog({
     try {
       await onSave(data);
       handleOpenChange(false);
-      toast.success("Profile updated successfully!");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to update profile. Please try again.");
     } finally {
       setLoading(false);
     }

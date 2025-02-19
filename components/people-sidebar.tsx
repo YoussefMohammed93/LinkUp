@@ -33,8 +33,8 @@ const suggestedFriends: Friend[] = [
 
 export default function PeopleSidebar() {
   return (
-    <aside className="sticky top-[5.25rem] hidden h-fit w-72 flex-none space-y-5 md:block lg:w-80">
-      <div className="space-y-5 rounded-md border bg-card p-4">
+    <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none space-y-5 md:block lg:w-80">
+      <div className="space-y-5 rounded-lg border bg-card p-4">
         <h2 className="text-xl font-semibold">Suggested Friends</h2>
         <div className="flex flex-col gap-5">
           {suggestedFriends.map((friend, index) => (
