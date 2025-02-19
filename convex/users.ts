@@ -108,3 +108,17 @@ export const updateUser = mutation({
     return await userByClerkUserId(ctx, identity.subject);
   },
 });
+
+export const getUserById = query({
+  args: {
+    id: v.id("users"),
+  },
+  handler: async (ctx, { id }) => {
+    const user = await ctx.db.get(id);
+    if (user === null) {
+      throw new Error("User not found");
+    }
+
+    return user;
+  },
+});

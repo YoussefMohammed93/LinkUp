@@ -3,9 +3,11 @@
 import Image from "next/image";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { useEdgeStore } from "@/lib/edgestore";
 import { Button } from "@/components/ui/button";
+import { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useMutation } from "convex/react";
 import { Edit, Loader2, Upload, User } from "lucide-react";
@@ -13,8 +15,13 @@ import { EditProfileDialog } from "@/components/edit-profile-dialog";
 
 export default function UserPage() {
   const { edgestore } = useEdgeStore();
+  const { userId: id } = useParams();
+  const userId = id as string as Id<"users">;
 
+  const user = useQuery(api.users.getUserById, { id: userId });
   const currentUser = useQuery(api.users.currentUser);
+  const isOwner = currentUser?._id === userId;
+
   const updateUser = useMutation(api.users.updateUser);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -31,8 +38,8 @@ export default function UserPage() {
         options: {
           replaceTargetUrl:
             type === "cover"
-              ? (currentUser?.coverImageUrl ?? undefined)
-              : (currentUser?.imageUrl ?? undefined),
+              ? (user?.coverImageUrl ?? undefined)
+              : (user?.imageUrl ?? undefined),
         },
         onProgressChange: (progress) => {
           setUploadProgress(progress);
@@ -63,47 +70,49 @@ export default function UserPage() {
   return (
     <section className="w-full min-w-0 space-y-5 bg-card border rounded-lg my-5">
       <div className="relative h-48 sm:h-64 w-full rounded-tl-lg rounded-tr-lg group">
-        {currentUser ? (
-          currentUser.coverImageUrl ? (
+        {user ? (
+          user.coverImageUrl ? (
             <>
               <Image
-                src={currentUser.coverImageUrl}
+                src={user.coverImageUrl}
                 alt="Cover image"
                 fill
                 className="object-cover transition-all duration-300 rounded-tl-lg rounded-tr-lg"
               />
-              <div className="absolute inset-0 flex items-center justify-center rounded-tl-lg rounded-tr-lg gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                    e.target.files?.[0] &&
-                    handleImageUpload("cover", e.target.files[0])
-                  }
-                  className="hidden"
-                  id="cover-upload"
-                  disabled={isUploading}
-                />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() =>
-                    document.getElementById("cover-upload")?.click()
-                  }
-                  disabled={isUploading}
-                >
-                  {isUploading ? (
-                    <span className="flex items-center gap-2">
-                      Uploading {uploadProgress}%{" "}
-                      <Loader2 className="animate-spin size-5" />
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Edit /> Change Cover
-                    </span>
-                  )}
-                </Button>
-              </div>
+              {isOwner && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-tl-lg rounded-tr-lg gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      e.target.files?.[0] &&
+                      handleImageUpload("cover", e.target.files[0])
+                    }
+                    className="hidden"
+                    id="cover-upload"
+                    disabled={isUploading}
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      document.getElementById("cover-upload")?.click()
+                    }
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <span className="flex items-center gap-2">
+                        Uploading {uploadProgress}%{" "}
+                        <Loader2 className="animate-spin size-5" />
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Edit /> Change Cover
+                      </span>
+                    )}
+                  </Button>
+                </div>
+              )}
             </>
           ) : (
             <div className="w-full h-full bg-muted relative rounded-tl-lg rounded-tr-lg">
@@ -113,36 +122,38 @@ export default function UserPage() {
                 fill
                 className="object-cover rounded-tl-lg rounded-tr-lg"
               />
-              <div className="absolute z-10 inset-0 flex items-center justify-center rounded-tl-lg rounded-tr-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                    e.target.files?.[0] &&
-                    handleImageUpload("cover", e.target.files[0])
-                  }
-                  className="hidden z-10"
-                  id="cover-upload"
-                  disabled={isUploading}
-                />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() =>
-                    document.getElementById("cover-upload")?.click()
-                  }
-                  disabled={isUploading}
-                  className="z-10"
-                >
-                  {isUploading ? (
-                    "Uploading..."
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Upload /> Upload Cover
-                    </span>
-                  )}
-                </Button>
-              </div>
+              {isOwner && (
+                <div className="absolute z-10 inset-0 flex items-center justify-center rounded-tl-lg rounded-tr-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      e.target.files?.[0] &&
+                      handleImageUpload("cover", e.target.files[0])
+                    }
+                    className="hidden z-10"
+                    id="cover-upload"
+                    disabled={isUploading}
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      document.getElementById("cover-upload")?.click()
+                    }
+                    disabled={isUploading}
+                    className="z-10"
+                  >
+                    {isUploading ? (
+                      "Uploading..."
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Upload /> Upload Cover
+                      </span>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           )
         ) : (
@@ -152,14 +163,14 @@ export default function UserPage() {
       <div className="px-5">
         <div className="relative inline-block -mt-20 sm:-mt-28 z-10">
           <div className="relative h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 flex items-center justify-center rounded-full border-4 border-card bg-muted group">
-            {currentUser ? (
-              currentUser.imageUrl ? (
+            {user ? (
+              user.imageUrl ? (
                 <>
                   {avatarLoading && (
                     <Skeleton className="absolute inset-0 rounded-full" />
                   )}
                   <Image
-                    src={currentUser.imageUrl}
+                    src={user.imageUrl}
                     alt="Profile"
                     width={160}
                     height={160}
@@ -170,71 +181,75 @@ export default function UserPage() {
                       transition: "opacity 0.5s ease-in-out",
                     }}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50 rounded-full">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        e.target.files?.[0] &&
-                        handleImageUpload("profile", e.target.files[0])
-                      }
-                      className="hidden"
-                      id="profile-upload"
-                      disabled={isUploading}
-                    />
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      title="Change profie image"
-                      onClick={() =>
-                        document.getElementById("profile-upload")?.click()
-                      }
-                      className={`rounded-full p-2 ${
-                        isUploading ? "w-auto px-2" : "h-8 w-8"
-                      }`}
-                      disabled={isUploading}
-                    >
-                      {isUploading ? (
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs">{uploadProgress}%</span>
-                          <Loader2 className="animate-spin h-4 w-4" />
-                        </div>
-                      ) : (
-                        <Edit className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
+                  {isOwner && (
+                    <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50 rounded-full">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          e.target.files?.[0] &&
+                          handleImageUpload("profile", e.target.files[0])
+                        }
+                        className="hidden"
+                        id="profile-upload"
+                        disabled={isUploading}
+                      />
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        title="Change profile image"
+                        onClick={() =>
+                          document.getElementById("profile-upload")?.click()
+                        }
+                        className={`rounded-full p-2 ${
+                          isUploading ? "w-auto px-2" : "h-8 w-8"
+                        }`}
+                        disabled={isUploading}
+                      >
+                        {isUploading ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs">{uploadProgress}%</span>
+                            <Loader2 className="animate-spin h-4 w-4" />
+                          </div>
+                        ) : (
+                          <Edit className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
                   <span className="text-3xl font-semibold text-muted-foreground">
-                    {currentUser.firstName?.[0]}
-                    {currentUser.lastName?.[0]}
+                    {user.firstName?.[0]}
+                    {user.lastName?.[0]}
                   </span>
-                  <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50 rounded-full">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        e.target.files?.[0] &&
-                        handleImageUpload("profile", e.target.files[0])
-                      }
-                      className="hidden"
-                      id="profile-upload"
-                      disabled={isUploading}
-                    />
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() =>
-                        document.getElementById("profile-upload")?.click()
-                      }
-                      className="rounded-full p-2 h-8 w-8"
-                      disabled={isUploading}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {isOwner && (
+                    <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50 rounded-full">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          e.target.files?.[0] &&
+                          handleImageUpload("profile", e.target.files[0])
+                        }
+                        className="hidden"
+                        id="profile-upload"
+                        disabled={isUploading}
+                      />
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          document.getElementById("profile-upload")?.click()
+                        }
+                        className="rounded-full p-2 h-8 w-8"
+                        disabled={isUploading}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </>
               )
             ) : (
@@ -247,31 +262,29 @@ export default function UserPage() {
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
-              {currentUser ? (
+              {user ? (
                 <>
-                  {currentUser.firstName} {currentUser.lastName}
+                  {user.firstName} {user.lastName}
                 </>
               ) : (
                 <Skeleton className="h-8 w-64" />
               )}
             </h1>
-            {currentUser ? (
+            {isOwner && user && (
               <p className="mt-2 text-base sm:text-lg text-muted-foreground">
-                {currentUser.jobTitle || "Add your job title here!"}
+                {user.jobTitle || "Add your job title here!"}
               </p>
-            ) : (
-              <Skeleton className="h-6 w-48 mt-2" />
             )}
           </div>
-          {currentUser ? (
+          {isOwner && user && (
             <EditProfileDialog
               isOpen={isEditOpen}
               onOpenChange={setIsEditOpen}
               initialData={{
-                firstName: currentUser.firstName,
-                lastName: currentUser.lastName,
-                jobTitle: currentUser.jobTitle,
-                bio: currentUser.bio,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                jobTitle: user.jobTitle,
+                bio: user.bio,
               }}
               onSave={async (data) => {
                 try {
@@ -304,12 +317,10 @@ export default function UserPage() {
                 Edit Profile
               </Button>
             </EditProfileDialog>
-          ) : (
-            <Skeleton className="h-[42px] w-[140px]" />
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">
-          {currentUser ? (
+          {user ? (
             <>
               <StatCard icon={<Edit />} value="120" label="Posts" />
               <StatCard icon={<User />} value="28.2K" label="Followers" />
@@ -324,14 +335,16 @@ export default function UserPage() {
           )}
         </div>
         <div
-          className={`rounded-lg p-4 sm:p-6 my-5 bg-secondary/50 ${currentUser ? "border" : "bg-secondary"}`}
+          className={`rounded-lg p-4 sm:p-6 my-5 bg-secondary/50 ${
+            user ? "border" : "bg-secondary"
+          }`}
         >
           <h2 className="text-lg font-semibold text-foreground/90">
-            {currentUser ? "Bio" : <Skeleton className="h-6 w-24" />}
+            {user ? "Bio" : <Skeleton className="h-6 w-24" />}
           </h2>
-          {currentUser ? (
+          {user ? (
             <p className="mt-2 text-sm sm:text-base text-muted-foreground break-words whitespace-pre-wrap">
-              {currentUser.bio || "No bio yet"}
+              {user.bio || "No bio yet"}
             </p>
           ) : (
             <>
