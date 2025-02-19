@@ -35,11 +35,22 @@ export default function MenuBar({ className }: MenuBarProps) {
 
   return (
     <div className={className}>
-      <div
-        className="relative h-32 bg-cover bg-center hidden lg:block rounded-t-xl"
-        style={{ backgroundImage: "url(/cover-image-placeholder.png)" }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-card/90 to-card/20" />
+      {/* Cover Section */}
+      <div className="relative h-32 hidden lg:block rounded-t-xl">
+        {currentUser === undefined ? (
+          <Skeleton className="h-full w-full rounded-t-xl rounded-b-none animate-pulse" />
+        ) : (
+          <div
+            className="h-full w-full bg-cover bg-center rounded-t-xl"
+            style={{
+              backgroundImage: currentUser?.coverImageUrl
+                ? `url(${currentUser.coverImageUrl})`
+                : "none",
+            }}
+          />
+        )}
+
+        {/* Avatar Section */}
         <div className="absolute -bottom-8 xl:-bottom-10 left-4">
           <div className="size-16 xl:size-20 rounded-full border-4 border-card bg-secondary flex items-center justify-center">
             {currentUser === undefined ? (
@@ -48,8 +59,8 @@ export default function MenuBar({ className }: MenuBarProps) {
               <Image
                 src={currentUser.imageUrl}
                 alt="Profile"
-                width={40}
-                height={40}
+                width={100}
+                height={100}
                 className="w-full h-full rounded-full object-cover"
                 onLoad={() => setAvatarLoading(false)}
                 style={{
@@ -66,6 +77,8 @@ export default function MenuBar({ className }: MenuBarProps) {
           </div>
         </div>
       </div>
+
+      {/* User Info Section */}
       <div className="pt-14 pb-5 px-4 hidden lg:block">
         {currentUser === undefined ? (
           <>
@@ -78,12 +91,14 @@ export default function MenuBar({ className }: MenuBarProps) {
               {currentUser?.firstName} {currentUser?.lastName}
             </h2>
             <p className="text-sm text-muted-foreground lg:px-2">
-              Frontend Developer
+              {currentUser?.jobTitle}
             </p>
           </>
         )}
       </div>
-      <div className="lg:p-3 lg:pt-0">
+
+      {/* Menu Items */}
+      <div className="w-full flex sm:flex-col lg:p-3 lg:pt-0">
         {menuItems.map(({ title, href, icon: Icon }, index) => (
           <Button
             key={title}

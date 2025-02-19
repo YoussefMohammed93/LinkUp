@@ -3,7 +3,7 @@ import PostEditor from "@/components/post-editor";
 
 export default function MainPage() {
   return (
-    <main className="flex w-full min-w-0 gap-5">
+    <main className="flex w-full min-w-0 gap-5 mt-5">
       <div className="w-full min-w-0 space-y-5">
         <PostEditor />
         {/* <Tabs defaultValue="for-you">

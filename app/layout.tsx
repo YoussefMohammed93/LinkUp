@@ -2,8 +2,10 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Noto_Sans, JetBrains_Mono } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
+import { EdgeStoreProvider } from "@/lib/edgestore";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Noto_Sans, JetBrains_Mono } from "next/font/google";
 import { ConvexClientProvider } from "./convex-client-provider";
 
 const notoSans = Noto_Sans({
@@ -39,14 +41,17 @@ export default function RootLayout({
       >
         <body className="font-sans antialiased">
           <ConvexClientProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-            </ThemeProvider>
+            <EdgeStoreProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+                <Toaster position="bottom-right" richColors />
+              </ThemeProvider>
+            </EdgeStoreProvider>
           </ConvexClientProvider>
         </body>
       </html>

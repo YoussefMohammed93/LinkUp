@@ -1,6 +1,12 @@
+import {
+  internalMutation,
+  mutation,
+  query,
+  QueryCtx,
+} from "./_generated/server";
+
 import { v, Validator } from "convex/values";
 import { UserJSON } from "@clerk/nextjs/server";
-import { internalMutation, query, QueryCtx } from "./_generated/server";
 
 export const getUsers = query({
   args: {},
@@ -79,3 +85,26 @@ async function userByClerkUserId(ctx: QueryCtx, clerkUserId: string) {
     .withIndex("byClerkUserId", (q) => q.eq("clerkUserId", clerkUserId))
     .unique();
 }
+
+export const updateUser = mutation({
+  args: {
+    updates: v.object({
+      firstName: v.optional(v.string()),
+      lastName: v.optional(v.string()),
+      jobTitle: v.optional(v.string()),
+      bio: v.optional(v.string()),
+      imageUrl: v.optional(v.string()),
+      coverImageUrl: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, { updates }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const user = await userByClerkUserId(ctx, identity.subject);
+    if (!user) throw new Error("User not found");
+
+    await ctx.db.patch(user._id, updates);
+    return await userByClerkUserId(ctx, identity.subject);
+  },
+});
