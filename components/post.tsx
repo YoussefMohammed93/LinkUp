@@ -113,7 +113,7 @@ export function Post({ post, onDelete }: PostProps) {
             </Link>
             <div className="ml-3">
               <Link href={`/users/${post.authorId}`}>
-                <div className="font-semibold text-foreground cursor-pointer">
+                <div className="font-semibold text-foreground cursor-pointer hover:underline">
                   {post.authorName}
                 </div>
               </Link>

@@ -84,3 +84,15 @@ export const deletePost = mutation({
     await ctx.db.delete(postId);
   },
 });
+
+// Query: Get all posts by a specific user
+export const getUserPosts = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    return await ctx.db
+      .query("posts")
+      .withIndex("byAuthor", (q) => q.eq("authorId", userId))
+      .order("desc")
+      .collect();
+  },
+});
