@@ -111,3 +111,39 @@ export const getFollowingCount = query({
       .collect();
   },
 });
+
+export const getFollowers = query({
+  args: { userId: v.id("users") },
+  async handler(ctx, { userId }) {
+    const followRecords = await ctx.db
+      .query("follows")
+      .withIndex("byFollowing", (q) => q.eq("followingId", userId))
+      .collect();
+
+    const followerIds = followRecords.map((record) => record.followerId);
+
+    const followers = await Promise.all(
+      followerIds.map(async (id) => await ctx.db.get(id))
+    );
+
+    return followers;
+  },
+});
+
+export const getFollowing = query({
+  args: { userId: v.id("users") },
+  async handler(ctx, { userId }) {
+    const followRecords = await ctx.db
+      .query("follows")
+      .withIndex("byFollower", (q) => q.eq("followerId", userId))
+      .collect();
+
+    const followingIds = followRecords.map((record) => record.followingId);
+
+    const following = await Promise.all(
+      followingIds.map(async (id) => await ctx.db.get(id))
+    );
+
+    return following;
+  },
+});

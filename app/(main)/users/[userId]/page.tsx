@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useMutation } from "convex/react";
-import { Edit, Loader2, Upload, User } from "lucide-react";
+import { Edit, Loader2, Upload } from "lucide-react";
+import FollowListDialog from "@/components/user-list-dialog";
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
 
 function formatCount(count: number): string {
@@ -62,6 +63,8 @@ export default function UserPage() {
   const [avatarLoading, setAvatarLoading] = useState(true);
 
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
+  const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
 
   const handleToggleFollow = async () => {
     try {
@@ -72,10 +75,14 @@ export default function UserPage() {
 
       if (isFollowing === true) {
         await unfollowUserMutation({ targetUserId: user._id });
-        toast.success(`You have unfollowed ${user.firstName || "the user"}!`);
+        toast.success(
+          `You have unfollowed ${user.firstName} ${user.lastName || ""}!`
+        );
       } else {
         await followUserMutation({ targetUserId: user._id });
-        toast.success(`You are now following ${user.firstName || "the user"}!`);
+        toast.success(
+          `You are now following ${user.firstName} ${user.lastName || ""}!`
+        );
         if (audioRef.current) {
           audioRef.current
             .play()
@@ -412,14 +419,31 @@ export default function UserPage() {
                 </div>
                 <div>
                   <Skeleton className="h-6 w-16" />
-                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-20 mt-1" />
                 </div>
               </div>
             )}
             {followersCount !== undefined ? (
-              <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/50">
+              <div
+                role="button"
+                onClick={() => setFollowersDialogOpen(true)}
+                className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/50"
+              >
                 <div className="rounded-full bg-primary/10 p-3 text-primary">
-                  <User />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="size-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
+                    />
+                  </svg>
                 </div>
                 <div>
                   <div className="text-xl sm:text-2xl font-bold">
@@ -437,14 +461,31 @@ export default function UserPage() {
                 </div>
                 <div>
                   <Skeleton className="h-6 w-16" />
-                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-20 mt-1" />
                 </div>
               </div>
             )}
             {followingCount !== undefined ? (
-              <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/50">
+              <div
+                role="button"
+                onClick={() => setFollowingDialogOpen(true)}
+                className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/50"
+              >
                 <div className="rounded-full bg-primary/10 p-3 text-primary">
-                  <User />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="size-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                    />
+                  </svg>
                 </div>
                 <div>
                   <div className="text-xl sm:text-2xl font-bold">
@@ -462,7 +503,7 @@ export default function UserPage() {
                 </div>
                 <div>
                   <Skeleton className="h-6 w-16" />
-                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-20 mt-1" />
                 </div>
               </div>
             )}
@@ -538,6 +579,22 @@ export default function UserPage() {
         <source src="/audio.mp3" type="audio/mpeg" />
         Your browser does not support the audio element.
       </audio>
+      {user && (
+        <>
+          <FollowListDialog
+            open={followersDialogOpen}
+            onOpenChange={setFollowersDialogOpen}
+            userId={user._id}
+            type="followers"
+          />
+          <FollowListDialog
+            open={followingDialogOpen}
+            onOpenChange={setFollowingDialogOpen}
+            userId={user._id}
+            type="following"
+          />
+        </>
+      )}
     </section>
   );
 }
