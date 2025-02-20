@@ -187,7 +187,7 @@ export default function PeopleSidebar() {
 
   if (sidebarLoading) {
     return (
-      <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none space-y-5 lg:block xl:w-[345px]">
+      <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none space-y-5 lg:block xl:w-[320px]">
         <div className="space-y-5 rounded-lg border bg-card p-4">
           <h2 className="text-xl font-semibold">Suggested Friends</h2>
           <div className="flex flex-col gap-5">
@@ -215,7 +215,7 @@ export default function PeopleSidebar() {
   }
 
   return (
-    <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none space-y-5 lg:block xl:w-[345px]">
+    <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none space-y-5 lg:block xl:w-[320px]">
       <div className="space-y-5 rounded-lg border bg-card p-4">
         <h2 className="text-xl font-semibold">Suggested Friends</h2>
         <div className="flex flex-col gap-5">

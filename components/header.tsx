@@ -6,7 +6,7 @@ import SearchField from "./search-field";
 export const Header = () => {
   return (
     <header className="sticky top-0 z-50 bg-card border-b">
-      <div className="max-w-[1320px] mx-auto flex items-center justify-between gap-6 px-6 py-4 sm:gap-5">
+      <div className="max-w-[1200px] mx-auto flex items-center justify-between gap-6 px-6 py-4 sm:gap-5">
         <Link
           href="/"
           className="flex items-center gap-3 text-2xl md:text-3xl font-bold text-primary"

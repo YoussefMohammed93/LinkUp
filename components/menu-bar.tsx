@@ -37,7 +37,7 @@ export default function MenuBar({ className }: MenuBarProps) {
 
   return (
     <div className={className}>
-      <div className="relative h-32 hidden lg:block rounded-t-xl">
+      <div className="relative h-20 hidden lg:block rounded-t-xl">
         {currentUser === undefined ? (
           <Skeleton className="h-full w-full rounded-t-xl rounded-b-none animate-pulse" />
         ) : (
@@ -48,8 +48,8 @@ export default function MenuBar({ className }: MenuBarProps) {
             }}
           />
         )}
-        <div className="absolute -bottom-8 xl:-bottom-10 left-4">
-          <div className="size-16 xl:size-20 rounded-full border-4 border-card bg-secondary flex items-center justify-center">
+        <div className="absolute -bottom-8 xl:-bottom-12 left-4">
+          <div className="size-16 xl:size-20 rounded-full border-[3px] border-card bg-secondary flex items-center justify-center">
             {currentUser === undefined ? (
               <Loader className="animate-spin text-muted-foreground size-5" />
             ) : currentUser?.imageUrl ? (
@@ -82,10 +82,10 @@ export default function MenuBar({ className }: MenuBarProps) {
           </>
         ) : (
           <>
-            <h2 className="text-base font-semibold lg:px-2">
+            <h2 className="text-base font-semibold lg:px-2 max-w-[200px] truncate overflow-hidden">
               {currentUser?.firstName} {currentUser?.lastName}
             </h2>
-            <p className="text-sm text-muted-foreground lg:px-2">
+            <p className="text-sm text-muted-foreground lg:px-2 max-w-[200px] truncate overflow-hidden">
               {currentUser?.jobTitle}
             </p>
           </>
@@ -97,7 +97,7 @@ export default function MenuBar({ className }: MenuBarProps) {
             key={title}
             variant="ghost"
             className={cn(
-              "flex items-center justify-start gap-2 w-full py-5 px-3",
+              "flex items-center justify-start gap-2 w-full py-1 px-3",
               index === 0
                 ? "lg:rounded-tl-lg lg:rounded-tr-lg lg:rounded-b-none"
                 : index === menuItems.length - 1
@@ -113,7 +113,7 @@ export default function MenuBar({ className }: MenuBarProps) {
               className="flex items-center justify-center lg:justify-start w-full"
             >
               <Icon />
-              <span className="hidden lg:inline">{title}</span>
+              <span className="hidden lg:inline text-xs">{title}</span>
             </Link>
           </Button>
         ))}
