@@ -23,4 +23,11 @@ export default defineSchema({
   })
     .index("byAuthor", ["authorId"])
     .index("byCreationTime", ["createdAt"]),
+
+  follows: defineTable({
+    followerId: v.id("users"),
+    followingId: v.id("users"),
+  })
+    .index("byFollower", ["followerId"])
+    .index("byFollowing", ["followingId"]),
 });

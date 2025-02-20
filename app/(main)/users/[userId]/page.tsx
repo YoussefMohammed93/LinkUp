@@ -2,11 +2,10 @@
 
 import Image from "next/image";
 import { toast } from "sonner";
-import { useState } from "react";
 import { Post } from "@/components/post";
+import { useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
-import { useEdgeStore } from "@/lib/edgestore";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,47 +13,94 @@ import { useQuery, useMutation } from "convex/react";
 import { Edit, Loader2, Upload, User } from "lucide-react";
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
 
+function formatCount(count: number): string {
+  if (count >= 1000) {
+    return (count / 1000).toFixed(1) + "K";
+  }
+  return count.toString();
+}
+
 export default function UserPage() {
-  const { edgestore } = useEdgeStore();
   const { userId: id } = useParams();
+  const userId = id as string;
 
-  const userId = id as string as Id<"users">;
-  const user = useQuery(api.users.getUserById, { id: userId });
+  const user = useQuery(api.users.getUserById, { id: userId as Id<"users"> });
   const currentUser = useQuery(api.users.currentUser);
-  const isOwner = currentUser?._id === userId;
+  const isOwner = currentUser && user && currentUser._id === user._id;
 
-  const userPosts = useQuery(api.posts.getUserPosts, { userId });
+  const isFollowing = useQuery(
+    api.follows.isFollowing,
+    currentUser && user
+      ? { followerId: currentUser._id, followingId: user._id }
+      : "skip"
+  );
 
-  const updateUser = useMutation(api.users.updateUser);
+  const isFollowedBy = useQuery(
+    api.follows.isFollowedBy,
+    currentUser && user
+      ? { followerId: user._id, followingId: currentUser._id }
+      : "skip"
+  );
+
+  const followersCount = useQuery(
+    api.follows.getFollowersCount,
+    user ? { userId: user._id } : "skip"
+  );
+
+  const followingCount = useQuery(
+    api.follows.getFollowingCount,
+    user ? { userId: user._id } : "skip"
+  );
+
+  const followUserMutation = useMutation(api.follows.followUser);
+  const unfollowUserMutation = useMutation(api.follows.unfollowUser);
+  const updateUserMutation = useMutation(api.users.updateUser);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [avatarLoading, setAvatarLoading] = useState(true);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [avatarLoading, setAvatarLoading] = useState(true);
+
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const handleToggleFollow = async () => {
+    try {
+      if (!user) {
+        toast.error("User not found.");
+        return;
+      }
+
+      if (isFollowing === true) {
+        await unfollowUserMutation({ targetUserId: user._id });
+        toast.success(`You have unfollowed ${user.firstName || "the user"}!`);
+      } else {
+        await followUserMutation({ targetUserId: user._id });
+        toast.success(`You are now following ${user.firstName || "the user"}!`);
+        if (audioRef.current) {
+          audioRef.current
+            .play()
+            .catch((err) => console.error("Audio playback failed:", err));
+        }
+      }
+    } catch (error) {
+      toast.error(
+        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  };
 
   const handleImageUpload = async (type: "cover" | "profile", file: File) => {
     setIsUploading(true);
     setUploadProgress(0);
     try {
-      const res = await edgestore.publicFiles.upload({
-        file,
-        options: {
-          replaceTargetUrl:
-            type === "cover"
-              ? (user?.coverImageUrl ?? undefined)
-              : (user?.imageUrl ?? undefined),
-        },
-        onProgressChange: (progress) => {
-          setUploadProgress(progress);
-        },
-      });
-
-      await updateUser({
+      const res = await new Promise<{ url: string }>((resolve) =>
+        setTimeout(() => resolve({ url: URL.createObjectURL(file) }), 1000)
+      );
+      await updateUserMutation({
         updates: {
           [type === "cover" ? "coverImageUrl" : "imageUrl"]: res.url,
         },
       });
-
       toast.success(
         `${type.charAt(0).toUpperCase() + type.slice(1)} image updated!`
       );
@@ -70,7 +116,11 @@ export default function UserPage() {
     }
   };
 
-  const handleDeletePost = async (postId: Id<"posts">) => {
+  const userPosts = useQuery(api.posts.getUserPosts, {
+    userId: user?._id as Id<"users">,
+  });
+
+  const handleDeletePost = async (postId: string) => {
     console.log("Deleting post:", postId);
   };
 
@@ -88,7 +138,7 @@ export default function UserPage() {
                   className="object-cover transition-all duration-300 rounded-tl-lg rounded-tr-lg"
                 />
                 {isOwner && (
-                  <div className="absolute inset-0 flex items-center justify-center gap-2 rounded-tl-lg rounded-tr-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
+                  <div className="absolute inset-0 flex items-center justify-center gap-2 rounded-tl-lg rounded-tr-lg bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
                     <input
                       type="file"
                       accept="image/*"
@@ -111,7 +161,7 @@ export default function UserPage() {
                       {isUploading ? (
                         <span className="flex items-center gap-2">
                           Uploading {uploadProgress}%{" "}
-                          <Loader2 className="animate-spin size-5" />
+                          <Loader2 className="animate-spin h-4 w-4" />
                         </span>
                       ) : (
                         <span className="flex items-center gap-2">
@@ -131,7 +181,7 @@ export default function UserPage() {
                   className="object-cover rounded-tl-lg rounded-tr-lg"
                 />
                 {isOwner && (
-                  <div className="absolute inset-0 flex items-center justify-center gap-2 rounded-tl-lg rounded-tr-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
+                  <div className="absolute inset-0 flex items-center justify-center gap-2 rounded-tl-lg rounded-tr-lg bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
                     <input
                       type="file"
                       accept="image/*"
@@ -189,7 +239,7 @@ export default function UserPage() {
                       }}
                     />
                     {isOwner && (
-                      <div className="absolute inset-0 flex items-center justify-center gap-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
+                      <div className="absolute inset-0 flex items-center justify-center gap-2 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
                         <input
                           type="file"
                           accept="image/*"
@@ -208,10 +258,8 @@ export default function UserPage() {
                           onClick={() =>
                             document.getElementById("profile-upload")?.click()
                           }
-                          className={`rounded-full p-2 ${
-                            isUploading ? "w-auto px-2" : "h-8 w-8"
-                          }`}
                           disabled={isUploading}
+                          className="rounded-full p-2"
                         >
                           {isUploading ? (
                             <div className="flex items-center gap-1">
@@ -232,7 +280,7 @@ export default function UserPage() {
                       {user.lastName?.[0]}
                     </span>
                     {isOwner && (
-                      <div className="absolute inset-0 flex items-center justify-center gap-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
+                      <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
                         <input
                           type="file"
                           accept="image/*"
@@ -250,8 +298,8 @@ export default function UserPage() {
                           onClick={() =>
                             document.getElementById("profile-upload")?.click()
                           }
-                          className="rounded-full p-2 h-8 w-8"
                           disabled={isUploading}
+                          className="rounded-full p-2"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -274,16 +322,20 @@ export default function UserPage() {
                     {user.firstName} {user.lastName}
                   </>
                 ) : (
-                  <Skeleton className="h-8 w-64" />
+                  <Skeleton className="h-10 w-64 mt-1" />
                 )}
               </h1>
-              {isOwner && user && (
-                <p className="mt-2 text-base sm:text-lg text-muted-foreground">
-                  {user.jobTitle || "Add your job title here!"}
-                </p>
+              {user ? (
+                isOwner && (
+                  <p className="mt-2 text-base sm:text-lg text-muted-foreground">
+                    {user.jobTitle || "Add your job title here!"}
+                  </p>
+                )
+              ) : (
+                <Skeleton className="mt-2 h-6 w-48" />
               )}
             </div>
-            {isOwner && user && (
+            {user && isOwner ? (
               <EditProfileDialog
                 isOpen={isEditOpen}
                 onOpenChange={setIsEditOpen}
@@ -301,15 +353,17 @@ export default function UserPage() {
                       jobTitle: data.jobTitle,
                       bio: data.bio,
                     };
-
-                    const promise = updateUser({ updates });
-
+                    const promise = updateUserMutation({ updates });
                     toast.promise(promise, {
                       loading: "Saving changes...",
                       success: "Profile updated successfully!",
-                      error: (error) => `Update failed: ${error.message}`,
+                      error: (error) =>
+                        `Update failed: ${
+                          error instanceof Error
+                            ? error.message
+                            : "Unknown error"
+                        }`,
                     });
-
                     await promise;
                   } catch (error) {
                     console.error("Failed to update profile", error);
@@ -320,33 +374,101 @@ export default function UserPage() {
                   variant="outline"
                   className="gap-2 px-5 py-3 sm:py-5 shadow-none"
                 >
-                  <Edit className="h-4 w-4" />
-                  Edit Profile
+                  <Edit className="h-4 w-4" /> Edit Profile
                 </Button>
               </EditProfileDialog>
+            ) : (
+              <Button
+                className="gap-1 px-4 py-3 sm:py-4 shadow-none"
+                onClick={handleToggleFollow}
+              >
+                {isFollowing
+                  ? "Unfollow"
+                  : isFollowedBy
+                    ? "Follow Back"
+                    : "Follow"}
+              </Button>
             )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">
-            {user ? (
-              <>
-                <StatCard icon={<Edit />} value="120" label="Posts" />
-                <StatCard icon={<User />} value="28.2K" label="Followers" />
-                <StatCard icon={<User />} value="1.3K" label="Following" />
-              </>
+            {userPosts !== undefined ? (
+              <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/50">
+                <div className="rounded-full bg-primary/10 p-3 text-primary">
+                  <Edit />
+                </div>
+                <div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {userPosts.length}
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">
+                    Posts
+                  </div>
+                </div>
+              </div>
             ) : (
-              <>
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-              </>
+              <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4">
+                <div className="rounded-full bg-primary/10 p-3 text-primary">
+                  <Skeleton className="h-6 w-6" />
+                </div>
+                <div>
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </div>
+            )}
+            {followersCount !== undefined ? (
+              <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/50">
+                <div className="rounded-full bg-primary/10 p-3 text-primary">
+                  <User />
+                </div>
+                <div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {formatCount(followersCount.length)}
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">
+                    Followers
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4">
+                <div className="rounded-full bg-primary/10 p-3 text-primary">
+                  <Skeleton className="h-6 w-6" />
+                </div>
+                <div>
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </div>
+            )}
+            {followingCount !== undefined ? (
+              <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/50">
+                <div className="rounded-full bg-primary/10 p-3 text-primary">
+                  <User />
+                </div>
+                <div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {formatCount(followingCount.length)}
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">
+                    Following
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4">
+                <div className="rounded-full bg-primary/10 p-3 text-primary">
+                  <Skeleton className="h-6 w-6" />
+                </div>
+                <div>
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </div>
             )}
           </div>
         </div>
-        <div
-          className={`rounded-lg p-4 sm:p-6 my-5 bg-secondary/50 mx-5 ${
-            user ? "border" : "bg-secondary"
-          }`}
-        >
+        <div className="rounded-lg border p-4 sm:p-6 my-5 bg-secondary/50 mx-5">
           <h2 className="text-lg font-semibold text-foreground/90">
             {user ? "Bio" : <Skeleton className="h-6 w-24" />}
           </h2>
@@ -355,10 +477,10 @@ export default function UserPage() {
               {user.bio || "No bio yet"}
             </p>
           ) : (
-            <>
-              <Skeleton className="h-4 w-full mt-2" />
-              <Skeleton className="h-4 w-5/6 mt-2" />
-            </>
+            <div className="mt-2 space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
           )}
         </div>
       </div>
@@ -384,16 +506,17 @@ export default function UserPage() {
               />
             ))
           ) : (
-            <p>No posts to display.</p>
+            <p>
+              {isOwner
+                ? "You haven't posted anything yet."
+                : "This user hasn't posted anything yet."}
+            </p>
           )
         ) : (
           <div className="space-y-6 pb-5">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div
-                key={index}
-                className="border border-[hsl(var(--border))] rounded-lg p-4 bg-card"
-              >
-                <div className="flex items-center space-x-4">
+              <div key={index} className="border rounded-lg p-4 bg-card">
+                <div className="flex items-center gap-4">
                   <Skeleton className="w-10 h-10 rounded-full bg-secondary" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 rounded w-3/4 bg-secondary" />
@@ -410,26 +533,11 @@ export default function UserPage() {
           </div>
         )}
       </section>
+      <audio ref={audioRef} preload="auto">
+        <source src="/audio.m4a" type="audio/mp4" />
+        <source src="/audio.mp3" type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
     </section>
-  );
-}
-
-function StatCard({
-  icon,
-  value,
-  label,
-}: {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
-}) {
-  return (
-    <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/50">
-      <div className="rounded-full bg-primary/10 p-3 text-primary">{icon}</div>
-      <div>
-        <div className="text-xl sm:text-2xl font-bold">{value}</div>
-        <div className="text-xs sm:text-sm text-muted-foreground">{label}</div>
-      </div>
-    </div>
   );
 }

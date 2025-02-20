@@ -213,7 +213,7 @@ export function Post({ post, onDelete }: PostProps) {
             </>
           )}
         </CardContent>
-        <CardFooter className="flex items-center justify-between border-t border-border pt-3">
+        <CardFooter className="flex items-center justify-between border-t border-border p-2.5">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"

@@ -18,8 +18,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
+  firstName: z
+    .string()
+    .min(2, "First name must be at least 2 characters")
+    .max(16, "First name must not exceed 16 characters"),
+  lastName: z
+    .string()
+    .min(2, "Last name must be at least 2 characters")
+    .max(16, "Last name must not exceed 16 characters"),
   jobTitle: z.string().min(3, "Job title must be at least 3 characters"),
   bio: z.string().max(500, "Bio must not exceed 500 characters").optional(),
 });
