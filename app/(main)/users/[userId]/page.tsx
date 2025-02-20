@@ -6,6 +6,7 @@ import { Post } from "@/components/post";
 import { useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
+import { useEdgeStore } from "@/lib/edgestore";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +23,9 @@ function formatCount(count: number): string {
 }
 
 export default function UserPage() {
+  const { edgestore } = useEdgeStore();
+  const updateUser = useMutation(api.users.updateUser);
+
   const { userId: id } = useParams();
   const userId = id as string;
 
@@ -100,14 +104,25 @@ export default function UserPage() {
     setIsUploading(true);
     setUploadProgress(0);
     try {
-      const res = await new Promise<{ url: string }>((resolve) =>
-        setTimeout(() => resolve({ url: URL.createObjectURL(file) }), 1000)
-      );
-      await updateUserMutation({
+      const res = await edgestore.publicFiles.upload({
+        file,
+        options: {
+          replaceTargetUrl:
+            type === "cover"
+              ? (currentUser?.coverImageUrl ?? undefined)
+              : (currentUser?.imageUrl ?? undefined),
+        },
+        onProgressChange: (progress: number) => {
+          setUploadProgress(progress);
+        },
+      });
+
+      await updateUser({
         updates: {
           [type === "cover" ? "coverImageUrl" : "imageUrl"]: res.url,
         },
       });
+
       toast.success(
         `${type.charAt(0).toUpperCase() + type.slice(1)} image updated!`
       );
