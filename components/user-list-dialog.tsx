@@ -225,11 +225,16 @@ export default function FollowListDialog({
                           loading="lazy"
                           src={user?.imageUrl || "/avatar-placeholder.png"}
                           alt={`${user?.firstName} ${user?.lastName}`}
-                          className="h-10 w-10 rounded-full object-cover"
+                          className="h-11 w-11 rounded-full object-cover"
                         />
-                        <span className="font-medium text-foreground">
-                          {user?.firstName} {user?.lastName}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-foreground">
+                            {user?.firstName} {user?.lastName}
+                          </span>
+                          <span className="text-sm font-light text-muted-foreground">
+                            {user?.jobTitle || "User"}
+                          </span>
+                        </div>
                       </Link>
                       {currentUser && currentUser._id !== user?._id && (
                         <FollowButton

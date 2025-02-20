@@ -361,18 +361,18 @@ export default function UserPage() {
                   <Skeleton className="mt-2 h-6 w-48" />
                 )}
               </div>
-              {user && isOwner ? (
-                <EditProfileDialog
-                  isOpen={isEditOpen}
-                  onOpenChange={setIsEditOpen}
-                  initialData={{
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    jobTitle: user.jobTitle,
-                    bio: user.bio,
-                  }}
-                  onSave={async (data) => {
-                    try {
+              {user ? (
+                isOwner ? (
+                  <EditProfileDialog
+                    isOpen={isEditOpen}
+                    onOpenChange={setIsEditOpen}
+                    initialData={{
+                      firstName: user.firstName,
+                      lastName: user.lastName,
+                      jobTitle: user.jobTitle,
+                      bio: user.bio,
+                    }}
+                    onSave={async (data) => {
                       const updates = {
                         firstName: data.firstName,
                         lastName: data.lastName,
@@ -391,29 +391,31 @@ export default function UserPage() {
                           }`,
                       });
                       await promise;
-                    } catch (error) {
-                      console.error("Failed to update profile", error);
-                    }
-                  }}
-                >
-                  <Button
-                    variant="outline"
-                    className="gap-2 px-5 py-3 sm:py-5 shadow-none"
+                    }}
                   >
-                    <Edit className="h-4 w-4" /> Edit Profile
+                    <Button
+                      variant="outline"
+                      className="gap-2 px-5 py-3 sm:py-5 shadow-none"
+                    >
+                      <Edit className="h-4 w-4" /> Edit Profile
+                    </Button>
+                  </EditProfileDialog>
+                ) : typeof isFollowing === "undefined" ? (
+                  <Skeleton className="h-10 w-[140px]" />
+                ) : (
+                  <Button
+                    className="gap-1 px-4 py-3 sm:py-4 shadow-none"
+                    onClick={handleToggleFollow}
+                  >
+                    {isFollowing
+                      ? "Unfollow"
+                      : isFollowedBy
+                        ? "Follow Back"
+                        : "Follow"}
                   </Button>
-                </EditProfileDialog>
+                )
               ) : (
-                <Button
-                  className="gap-1 px-4 py-3 sm:py-4 shadow-none"
-                  onClick={handleToggleFollow}
-                >
-                  {isFollowing
-                    ? "Unfollow"
-                    : isFollowedBy
-                      ? "Follow Back"
-                      : "Follow"}
-                </Button>
+                <Skeleton className="h-10 w-[140px]" />
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">

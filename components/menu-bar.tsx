@@ -17,21 +17,23 @@ import { Skeleton } from "./ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 
-const menuItems = [
-  { title: "Home", href: "/", icon: Home },
-  { title: "Profile", href: "/profile", icon: User },
-  { title: "Messages", href: "/messages", icon: MessagesSquare },
-  { title: "Bookmarks", href: "/bookmarks", icon: Bookmark },
-  { title: "Notifications", href: "/notifications", icon: Bell },
-];
-
 interface MenuBarProps {
   className?: string;
 }
 
 export default function MenuBar({ className }: MenuBarProps) {
   const currentUser = useQuery(api.users.currentUser);
+  const profileLink = currentUser ? `/users/${currentUser._id}` : "/";
+
   const [avatarLoading, setAvatarLoading] = useState(true);
+
+  const menuItems = [
+    { title: "Home", href: "/", icon: Home },
+    { title: "Profile", href: profileLink, icon: User },
+    { title: "Messages", href: "/messages", icon: MessagesSquare },
+    { title: "Bookmarks", href: "/bookmarks", icon: Bookmark },
+    { title: "Notifications", href: "/notifications", icon: Bell },
+  ];
 
   return (
     <div className={className}>

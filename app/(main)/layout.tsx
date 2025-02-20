@@ -9,8 +9,8 @@ export default async function Layout({
   return (
     <main className="flex min-h-screen flex-col bg-[#FAFBFF] dark:bg-background">
       <Header />
-      <div className="mx-auto flex w-full max-w-[1400px] grow gap-5 px-5">
-        <MenuBar className="sticky top-[6rem] hidden h-fit flex-none rounded-lg border bg-card sm:block sm:p-3 lg:p-0 xl:w-[320px]" />
+      <div className="mx-auto flex w-full max-w-[1320px] grow gap-5 px-5">
+        <MenuBar className="sticky top-[6rem] hidden h-fit flex-none rounded-lg border bg-card sm:block sm:p-3 lg:p-0 xl:w-[280px]" />
         {children}
       </div>
       <MenuBar className="sticky bottom-0 w-full flex justify-center gap-5 border-t bg-card p-3 sm:hidden" />

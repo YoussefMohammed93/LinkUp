@@ -130,10 +130,7 @@ function SuggestedUser({ user, currentUser, isLast }: SuggestedUserProps) {
     <div
       className={`flex items-center justify-between ${!isLast ? "border-b pb-3" : ""}`}
     >
-      <Link
-        href={`/profile/${user.clerkUserId}`}
-        className="flex items-center gap-3"
-      >
+      <Link href={`/users/${user._id}`} className="flex items-center gap-3">
         <Image
           src={user.imageUrl || "/avatar-placeholder.png"}
           alt={`${user.firstName || user.email}'s avatar`}
@@ -190,7 +187,7 @@ export default function PeopleSidebar() {
 
   if (sidebarLoading) {
     return (
-      <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none space-y-5 md:block xl:w-[320px]">
+      <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none space-y-5 lg:block xl:w-[345px]">
         <div className="space-y-5 rounded-lg border bg-card p-4">
           <h2 className="text-xl font-semibold">Suggested Friends</h2>
           <div className="flex flex-col gap-5">
@@ -218,7 +215,7 @@ export default function PeopleSidebar() {
   }
 
   return (
-    <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none space-y-5 md:block xl:w-[320px]">
+    <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none space-y-5 lg:block xl:w-[345px]">
       <div className="space-y-5 rounded-lg border bg-card p-4">
         <h2 className="text-xl font-semibold">Suggested Friends</h2>
         <div className="flex flex-col gap-5">

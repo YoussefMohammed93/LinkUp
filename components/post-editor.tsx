@@ -24,13 +24,29 @@ const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
   loading: () => <Loader className="animate-spin size-4" />,
 });
 
+function playAudio() {
+  const audio = document.createElement("audio");
+
+  const sourceM4a = document.createElement("source");
+  sourceM4a.src = "/audio.m4a";
+  sourceM4a.type = "audio/mp4";
+  audio.appendChild(sourceM4a);
+
+  const sourceMp3 = document.createElement("source");
+  sourceMp3.src = "/audio.mp3";
+  sourceMp3.type = "audio/mpeg";
+  audio.appendChild(sourceMp3);
+
+  audio.play().catch((err) => console.error("Audio playback failed:", err));
+}
+
 export default function PostEditor() {
   const { edgestore } = useEdgeStore();
 
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<File[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [avatarLoading, setAvatarLoading] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -81,35 +97,29 @@ export default function PostEditor() {
   };
 
   const handlePost = async () => {
-    console.log("Post button clicked");
-    if (!content.trim() && files.length === 0) {
-      console.log("No content or files to post");
-      return;
-    }
+    if (!content.trim() && files.length === 0) return;
+    setIsPosting(true);
     try {
       let uploadedImageUrls: string[] = [];
       if (files.length > 0) {
-        setIsUploading(true);
         uploadedImageUrls = await Promise.all(
           files.map(async (file) => await uploadFile(file))
         );
-        setIsUploading(false);
-        setUploadProgress(0);
       }
-      const result = await createPostMutation({
+      await createPostMutation({
         content,
         images: uploadedImageUrls,
       });
-      console.log("Post created successfully:", result);
       toast.success("Post created successfully!");
+      playAudio();
       setOpen(false);
       setContent("");
       setFiles([]);
     } catch (error) {
       console.error("Error creating post:", error);
       toast.error("Error creating post!");
-      setIsUploading(false);
-      setUploadProgress(0);
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -121,15 +131,15 @@ export default function PostEditor() {
   }, [content]);
 
   useEffect(() => {
-    if (isUploading) {
+    if (uploadProgress > 0 && uploadProgress < 100) {
       toast(`Uploading images: ${uploadProgress}%`, {
-        id: "upload",
+        id: "uploadProgress",
         duration: Infinity,
       });
     } else {
-      toast.dismiss("upload");
+      toast.dismiss("uploadProgress");
     }
-  }, [isUploading, uploadProgress]);
+  }, [uploadProgress]);
 
   return (
     <div className="flex items-center gap-3 bg-card border rounded-lg p-4">
@@ -169,7 +179,7 @@ export default function PostEditor() {
             </div>
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-3xl p-0 pb-4 overflow-y-auto max-h-[650px] overflow-x-hidden rounded-xl">
+        <DialogContent className="sm:max-w-3xl p-0 pb-4 overflow-y-auto max-h-[680px] overflow-x-hidden gap-0 rounded-xl">
           <DialogHeader className="border-b p-4">
             <DialogTitle className="text-center">Create Post</DialogTitle>
           </DialogHeader>
@@ -192,7 +202,7 @@ export default function PostEditor() {
                 </p>
               </div>
             </div>
-            <div className="space-y-3 p-4">
+            <div className="p-4">
               <textarea
                 ref={textareaRef}
                 value={content}
@@ -287,11 +297,11 @@ export default function PostEditor() {
                 <Button
                   onClick={handlePost}
                   disabled={
-                    (!content.trim() && files.length === 0) || isUploading
+                    (!content.trim() && files.length === 0) || isPosting
                   }
                   className="text-base font-medium rounded-lg"
                 >
-                  {isUploading ? (
+                  {isPosting ? (
                     <>
                       <Loader className="h-4 w-4 animate-spin" />
                       Posting...
