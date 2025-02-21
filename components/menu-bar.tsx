@@ -112,7 +112,7 @@ export default function MenuBar({ className }: MenuBarProps) {
               href={href}
               className="flex items-center justify-center lg:justify-start w-full"
             >
-              <Icon />
+              <Icon className="size-[17px]" />
               <span className="hidden lg:inline text-xs">{title}</span>
             </Link>
           </Button>

@@ -30,4 +30,10 @@ export default defineSchema({
   })
     .index("byFollower", ["followerId"])
     .index("byFollowing", ["followingId"]),
+
+  likes: defineTable({
+    postId: v.id("posts"),
+    userId: v.id("users"),
+    createdAt: v.number(),
+  }).index("byPost", ["postId"]),
 });

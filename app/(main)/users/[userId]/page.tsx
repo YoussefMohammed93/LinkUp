@@ -422,7 +422,7 @@ export default function UserPage() {
               {userPosts !== undefined ? (
                 <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/80">
                   <div className="rounded-full bg-primary/10 p-3 text-primary">
-                    <Edit />
+                    <Edit className="size-5" />
                   </div>
                   <div>
                     <div className="text-xl font-bold">{userPosts.length}</div>
@@ -455,7 +455,7 @@ export default function UserPage() {
                       viewBox="0 0 24 24"
                       strokeWidth="1.5"
                       stroke="currentColor"
-                      className="size-6"
+                      className="size-5"
                     >
                       <path
                         strokeLinecap="round"
@@ -497,7 +497,7 @@ export default function UserPage() {
                       viewBox="0 0 24 24"
                       strokeWidth="1.5"
                       stroke="currentColor"
-                      className="size-6"
+                      className="size-5"
                     >
                       <path
                         strokeLinecap="round"

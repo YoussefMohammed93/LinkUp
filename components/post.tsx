@@ -1,6 +1,3 @@
-import Link from "next/link";
-import Image from "next/image";
-import { toast } from "sonner";
 import {
   Heart,
   MessageSquare,
@@ -14,12 +11,15 @@ import {
   Flag,
   UserMinus,
 } from "lucide-react";
+import Link from "next/link";
 import {
   Card,
   CardHeader,
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import Image from "next/image";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -52,21 +52,24 @@ export type PostDocument = {
 
 export interface PostProps {
   post: {
+    _id: Id<"posts">;
+    _creationTime: number;
+    content: string;
     authorId: Id<"users">;
     authorName: string;
     authorImage: string;
-    createdAt: number;
     images: string[];
-    _id: Id<"posts">;
-    _creationTime: number;
+    createdAt: number;
     authorImageUrl?: string;
-    content: string;
   };
   currentUserId?: Id<"users">;
   onDelete: (postId: Id<"posts">) => Promise<void>;
 }
 
 export function Post({ post, onDelete }: PostProps) {
+  const { _id, authorId, authorName, authorImage, content, createdAt, images } =
+    post;
+
   const currentUser = useQuery(api.users.currentUser) as {
     _id: Id<"users">;
   } | null;
@@ -74,33 +77,62 @@ export function Post({ post, onDelete }: PostProps) {
   const isFollowingQuery = useQuery(
     api.follows.isFollowing,
     currentUser
-      ? {
-          followerId: currentUser._id,
-          followingId: post.authorId,
-        }
+      ? { followerId: currentUser._id, followingId: authorId }
       : "skip"
   );
 
+  const [openDialog, setOpenDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const isAuthor = currentUser?._id === authorId;
   const isFriend = currentUser ? isFollowingQuery : false;
+
+  const likePostMutation = useMutation(api.likes.likePost);
+  const unlikePostMutation = useMutation(api.likes.unlikePost);
+  const hasLiked = useQuery(api.likes.hasLiked, { postId: _id });
+  const likeCount = useQuery(api.likes.countLikes, { postId: _id });
 
   const deletePostMutation = useMutation(api.posts.deletePost);
   const unfollowUserMutation = useMutation(api.follows.unfollowUser);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const isAuthor = currentUser?._id === post.authorId;
-  const formattedDate = new Date(post.createdAt).toLocaleDateString("en-US", {
+
+  const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
 
+  const shouldAddMargin =
+    content.trim().length > 0 && images && images.length > 0;
+
+  const handleLike = async () => {
+    try {
+      await likePostMutation({ postId: _id });
+      toast.success("Post liked!");
+    } catch (error) {
+      console.error("Error liking post:", error);
+      toast.error("Failed to like post");
+    }
+  };
+
+  const handleUnlike = async () => {
+    try {
+      await unlikePostMutation({ postId: _id });
+      toast.success("Post unliked!");
+    } catch (error) {
+      console.error("Error unliking post:", error);
+      toast.error("Failed to unlike post");
+    }
+  };
+
+  const formatLikes = (count: number) => `${count} like${count > 1 ? "s" : ""}`;
+
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await deletePostMutation({ postId: post._id });
+      await deletePostMutation({ postId: _id });
       toast.success("Post deleted successfully");
-      onDelete?.(post._id);
+      onDelete?.(_id);
     } catch (error) {
       console.error("Error deleting post:", error);
       toast.error("Failed to delete post");
@@ -116,8 +148,8 @@ export function Post({ post, onDelete }: PostProps) {
       return;
     }
     try {
-      await unfollowUserMutation({ targetUserId: post.authorId });
-      toast.success(`You have unfollowed ${post.authorName}!`);
+      await unfollowUserMutation({ targetUserId: authorId });
+      toast.success(`You have unfollowed ${authorName}!`);
     } catch (error) {
       toast.error(
         `Error: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -130,19 +162,19 @@ export function Post({ post, onDelete }: PostProps) {
       <Card className="relative rounded-lg border shadow-none bg-card dark:bg-[#252728] text-card-foreground">
         <CardHeader>
           <div className="flex items-center">
-            <Link href={`/users/${post.authorId}`}>
+            <Link href={`/users/${authorId}`}>
               <Image
-                src={post.authorImage}
-                alt={post.authorName}
+                src={authorImage}
+                alt={authorName}
                 width={100}
                 height={100}
                 className="w-10 h-10 rounded-full object-cover cursor-pointer"
               />
             </Link>
             <div className="ml-3">
-              <Link href={`/users/${post.authorId}`}>
+              <Link href={`/users/${authorId}`}>
                 <div className="font-semibold text-foreground cursor-pointer hover:underline">
-                  {post.authorName}
+                  {authorName}
                 </div>
               </Link>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -193,7 +225,7 @@ export function Post({ post, onDelete }: PostProps) {
                   >
                     <UserX aria-hidden="true" />
                     <div>
-                      <span>Block {post.authorName}</span>
+                      <span>Block {authorName}</span>
                       <p
                         className="text-xs text-muted-foreground"
                         id="block-info"
@@ -214,8 +246,7 @@ export function Post({ post, onDelete }: PostProps) {
                         className="text-xs text-muted-foreground"
                         id="report-info"
                       >
-                        We won&apos;t let {post.authorName} know who reported
-                        this.
+                        We won&apos;t let {authorName} know who reported this.
                       </p>
                     </div>
                   </DropdownMenuItem>
@@ -228,28 +259,32 @@ export function Post({ post, onDelete }: PostProps) {
                   role="menuitem"
                 >
                   <UserMinus aria-hidden="true" />
-                  <span>Unfollow {post.authorName}</span>
+                  <span>Unfollow {authorName}</span>
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
         <CardContent>
-          <p className="text-foreground mb-3">{post.content}</p>
-          {post.images && post.images.length > 0 && (
+          {content.trim().length > 0 && (
+            <p className={`text-foreground ${shouldAddMargin ? "mb-3" : ""}`}>
+              {content}
+            </p>
+          )}
+          {images && images.length > 0 && (
             <>
-              {post.images.length === 1 && (
+              {images.length === 1 && (
                 <Image
-                  src={post.images[0]}
+                  src={images[0]}
                   alt="Post image"
                   width={1000}
                   height={1000}
                   className="w-full h-[300px] sm:h-[400px] rounded-lg object-cover"
                 />
               )}
-              {post.images.length === 2 && (
+              {images.length === 2 && (
                 <div className="grid grid-cols-2 gap-2">
-                  {post.images.map((image, index) => (
+                  {images.map((image, index) => (
                     <Image
                       key={index}
                       src={image}
@@ -261,10 +296,10 @@ export function Post({ post, onDelete }: PostProps) {
                   ))}
                 </div>
               )}
-              {post.images.length === 3 && (
+              {images.length === 3 && (
                 <div className="grid grid-cols-2 gap-2">
                   <Image
-                    src={post.images[0]}
+                    src={images[0]}
                     alt="Post image 1"
                     width={1000}
                     height={1000}
@@ -272,14 +307,14 @@ export function Post({ post, onDelete }: PostProps) {
                   />
                   <div className="flex flex-col gap-2">
                     <Image
-                      src={post.images[1]}
+                      src={images[1]}
                       alt="Post image 2"
                       width={1000}
                       height={1000}
                       className="rounded-lg object-cover flex-1"
                     />
                     <Image
-                      src={post.images[2]}
+                      src={images[2]}
                       alt="Post image 3"
                       width={1000}
                       height={1000}
@@ -288,15 +323,15 @@ export function Post({ post, onDelete }: PostProps) {
                   </div>
                 </div>
               )}
-              {post.images.length >= 4 && (
+              {images.length >= 4 && (
                 <div className="grid grid-cols-2 gap-2">
-                  {post.images.slice(0, 4).map((image, index) => (
+                  {images.slice(0, 4).map((image, index) => (
                     <Image
                       key={index}
                       src={image}
+                      alt={`Post image ${index + 1}`}
                       width={1000}
                       height={1000}
-                      alt={`Post image ${index + 1}`}
                       className="w-full h-full rounded-lg object-cover"
                     />
                   ))}
@@ -309,18 +344,20 @@ export function Post({ post, onDelete }: PostProps) {
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
-              size="sm"
+              onClick={hasLiked ? handleUnlike : handleLike}
               className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
-              <Heart className="h-5 w-5" />
-              Like
+              <Heart
+                className={`size-5 ${hasLiked ? "fill-red-500 text-red-500" : ""}`}
+              />
+              <span>{formatLikes(likeCount || 0)}</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
-              <MessageSquare className="h-5 w-5" />
+              <MessageSquare className="size-5" />
               Comment
             </Button>
           </div>
@@ -330,14 +367,14 @@ export function Post({ post, onDelete }: PostProps) {
               size="sm"
               className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
-              <Share2 className="h-5 w-5" />
+              <Share2 className="size-5" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
-              <Bookmark className="h-5 w-5" />
+              <Bookmark className="size-5" />
             </Button>
           </div>
         </CardFooter>
