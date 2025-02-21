@@ -1,27 +1,29 @@
 import Link from "next/link";
-import Image from "next/image";
 import UserButton from "./user-button";
 import SearchField from "./search-field";
+import { Protest_Revolution } from "next/font/google";
+
+const grechenFuemen = Protest_Revolution({
+  weight: "400",
+  subsets: ["latin"],
+});
 
 export const Header = () => {
   return (
-    <header className="sticky top-0 z-50 bg-card border-b">
-      <div className="max-w-[1200px] mx-auto flex items-center justify-between gap-6 px-6 py-4 sm:gap-5">
+    <header className="sticky top-0 z-50 bg-card dark:bg-[#252728] border-b">
+      <div className="max-w-[1200px] mx-auto flex items-center justify-between gap-4 px-6 py-3 sm:gap-5">
         <Link
           href="/"
-          className="flex items-center gap-3 text-2xl md:text-3xl font-bold text-primary"
-          aria-label="Home"
+          className={`flex items-center gap-3 text-2xl md:text-3xl font-bold text-primary dark:text-white ${grechenFuemen.className}`}
+          aria-label="LinkUp"
         >
-          <Image
-            src="/logo.svg"
-            alt="Loop logo"
-            width={40}
-            height={40}
-            priority
-          />
-          <span>Loop</span>
+          <svg width="120" height="50" className="fill-current">
+            <text x="0" y="40" fontSize="40">
+              LinkUp
+            </text>
+          </svg>
         </Link>
-        <div className="flex-grow ml-10 sm:ml-2 md:ml-0">
+        <div className="flex-grow">
           <SearchField />
         </div>
         <UserButton />

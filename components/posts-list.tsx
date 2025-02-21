@@ -85,19 +85,19 @@ function PostsSkeleton() {
       {Array.from({ length: 3 }).map((_, index) => (
         <div
           key={index}
-          className="border border-[hsl(var(--border))] rounded-lg p-4 bg-card"
+          className="border border-border rounded-lg p-4 bg-card dark:bg-[#252728]"
         >
           <div className="flex items-center space-x-3">
-            <Skeleton className="w-10 h-10 rounded-full bg-secondary" />
+            <Skeleton className="w-10 h-10 rounded-full bg-secondary dark:bg-card/50" />
             <div className="flex-1 space-y-3">
-              <Skeleton className="h-4 rounded w-3/4 bg-secondary" />
-              <Skeleton className="h-4 rounded w-1/2 bg-secondary" />
+              <Skeleton className="h-4 rounded w-3/4 bg-secondary dark:bg-card/50" />
+              <Skeleton className="h-4 rounded w-1/2 bg-secondary dark:bg-card/50" />
             </div>
           </div>
           <div className="mt-3 space-y-3">
-            <Skeleton className="h-4 rounded bg-secondary" />
-            <Skeleton className="h-4 rounded w-5/6 bg-secondary" />
-            <Skeleton className="h-4 rounded w-2/3 bg-secondary" />
+            <Skeleton className="h-4 rounded bg-secondary dark:bg-card/50" />
+            <Skeleton className="h-4 rounded w-5/6 bg-secondary dark:bg-card/50" />
+            <Skeleton className="h-4 rounded w-2/3 bg-secondary dark:bg-card/50" />
           </div>
         </div>
       ))}

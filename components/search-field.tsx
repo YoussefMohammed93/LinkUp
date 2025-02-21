@@ -36,7 +36,7 @@ export default function SearchField() {
           ref={inputRef}
           name="q"
           placeholder="Search"
-          className="w-full pe-10 sm:pe-12 pl-5 rounded-full shadow-none"
+          className="w-full pe-10 sm:pe-12 pl-5 rounded-full bg-secondary hover:bg-[#EFEFEF] dark:bg-[#333334] dark:hover:bg-[#404346] dark:border-none shadow-none"
         />
         <SearchIcon className="absolute right-4 top-1/2 size-5 -translate-y-1/2 transform text-muted-foreground" />
       </div>

@@ -7,7 +7,7 @@ export default async function Layout({
   children: React.ReactNode;
 }) {
   return (
-    <main className="flex min-h-screen flex-col bg-[#FAFBFF] dark:bg-background">
+    <main className="flex min-h-screen flex-col bg-[#f2f4f7] dark:bg-background">
       <Header />
       <div className="mx-auto flex w-full max-w-[1200px] grow gap-5 px-5">
         <MenuBar className="sticky top-[6rem] hidden h-fit flex-none rounded-lg border bg-card sm:block sm:p-3 lg:p-0 xl:w-[220px]" />

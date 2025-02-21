@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
-
 import {
   Heart,
   MessageSquare,
@@ -11,15 +10,16 @@ import {
   MoreHorizontal,
   Loader2,
   Globe,
+  UserX,
+  Flag,
+  UserMinus,
 } from "lucide-react";
-
 import {
   Card,
   CardHeader,
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-
 import {
   Dialog,
   DialogContent,
@@ -28,16 +28,13 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-
 import React, { useState } from "react";
-
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
@@ -70,8 +67,24 @@ export interface PostProps {
 }
 
 export function Post({ post, onDelete }: PostProps) {
-  const currentUser = useQuery(api.users.currentUser);
+  const currentUser = useQuery(api.users.currentUser) as {
+    _id: Id<"users">;
+  } | null;
+
+  const isFollowingQuery = useQuery(
+    api.follows.isFollowing,
+    currentUser
+      ? {
+          followerId: currentUser._id,
+          followingId: post.authorId,
+        }
+      : "skip"
+  );
+
+  const isFriend = currentUser ? isFollowingQuery : false;
+
   const deletePostMutation = useMutation(api.posts.deletePost);
+  const unfollowUserMutation = useMutation(api.follows.unfollowUser);
   const [openDialog, setOpenDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const isAuthor = currentUser?._id === post.authorId;
@@ -97,9 +110,24 @@ export function Post({ post, onDelete }: PostProps) {
     }
   };
 
+  const handleUnfollow = async () => {
+    if (!currentUser) {
+      toast.error("You must be logged in to unfollow a user.");
+      return;
+    }
+    try {
+      await unfollowUserMutation({ targetUserId: post.authorId });
+      toast.success(`You have unfollowed ${post.authorName}!`);
+    } catch (error) {
+      toast.error(
+        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  };
+
   return (
     <>
-      <Card className="relative rounded-lg border shadow-none bg-card text-card-foreground">
+      <Card className="relative rounded-lg border shadow-none bg-card dark:bg-[#252728] text-card-foreground">
         <CardHeader>
           <div className="flex items-center">
             <Link href={`/users/${post.authorId}`}>
@@ -122,25 +150,89 @@ export function Post({ post, onDelete }: PostProps) {
               </div>
             </div>
           </div>
-          {isAuthor && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute right-4"
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="absolute rounded-full p-2 right-4 dark:bg-[#252728] border-none shadow-none dark:hover:bg-muted text-muted-foreground"
+                aria-label="More options"
+              >
+                <MoreHorizontal className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              className="p-2"
+              role="menu"
+              aria-label="Post actions"
+            >
+              {isAuthor && (
+                <DropdownMenuItem
+                  onSelect={() => setOpenDialog(true)}
+                  className="p-2.5 dark:hover:bg-secondary"
+                  role="menuitem"
                 >
-                  <MoreHorizontal className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onSelect={() => setOpenDialog(true)}>
-                  <Trash />
-                  Delete post
+                  <Trash aria-hidden="true" />
+                  <span>Delete post</span>
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+              )}
+              <DropdownMenuItem
+                onSelect={() => {}}
+                className="p-2.5 dark:hover:bg-secondary"
+                role="menuitem"
+              >
+                <Bookmark aria-hidden="true" />
+                <span>Add to Bookmarks</span>
+              </DropdownMenuItem>
+              {!isAuthor && (
+                <>
+                  <DropdownMenuItem
+                    onSelect={() => {}}
+                    className="p-2.5 dark:hover:bg-secondary"
+                    role="menuitem"
+                  >
+                    <UserX aria-hidden="true" />
+                    <div>
+                      <span>Block {post.authorName}</span>
+                      <p
+                        className="text-xs text-muted-foreground"
+                        id="block-info"
+                      >
+                        You won&apos;t be able to see or contact each other.
+                      </p>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => {}}
+                    className="p-2.5 dark:hover:bg-secondary"
+                    role="menuitem"
+                  >
+                    <Flag aria-hidden="true" />
+                    <div>
+                      <span>Report this post</span>
+                      <p
+                        className="text-xs text-muted-foreground"
+                        id="report-info"
+                      >
+                        We won&apos;t let {post.authorName} know who reported
+                        this.
+                      </p>
+                    </div>
+                  </DropdownMenuItem>
+                </>
+              )}
+              {isFriend && (
+                <DropdownMenuItem
+                  onSelect={handleUnfollow}
+                  className="p-2.5 dark:hover:bg-secondary"
+                  role="menuitem"
+                >
+                  <UserMinus aria-hidden="true" />
+                  <span>Unfollow {post.authorName}</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </CardHeader>
         <CardContent>
           <p className="text-foreground mb-3">{post.content}</p>
@@ -218,7 +310,7 @@ export function Post({ post, onDelete }: PostProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="flex items-center gap-1 px-3 py-1.5 hover:bg-muted rounded-md"
+              className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
               <Heart className="h-5 w-5" />
               Like
@@ -226,7 +318,7 @@ export function Post({ post, onDelete }: PostProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="flex items-center gap-1 px-3 py-1.5 hover:bg-muted rounded-md"
+              className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
               <MessageSquare className="h-5 w-5" />
               Comment
@@ -236,21 +328,20 @@ export function Post({ post, onDelete }: PostProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="flex items-center gap-1 px-3 py-1.5 hover:bg-muted rounded-md"
+              className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
               <Share2 className="h-5 w-5" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="flex items-center gap-1 px-3 py-1.5 hover:bg-muted rounded-md"
+              className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
               <Bookmark className="h-5 w-5" />
             </Button>
           </div>
         </CardFooter>
       </Card>
-
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent>
           <DialogHeader>

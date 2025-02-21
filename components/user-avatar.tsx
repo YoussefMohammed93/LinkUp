@@ -24,7 +24,7 @@ export default function UserAvatar({
   return (
     <div
       className={cn(
-        "relative flex items-center justify-center flex-none rounded-full bg-secondary",
+        "relative flex items-center justify-center flex-none rounded-full bg-secondary dark:hover:bg-[#404346] dark:bg-[#333334]",
         className
       )}
       style={{ width: size, height: size }}

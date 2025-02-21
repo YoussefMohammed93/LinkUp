@@ -142,10 +142,10 @@ export default function PostEditor() {
   }, [uploadProgress]);
 
   return (
-    <div className="flex items-center gap-3 bg-card border rounded-lg p-4">
+    <div className="flex items-center gap-3 bg-card dark:bg-[#252728] border rounded-lg p-4">
       <div className="relative w-10 h-10 rounded-full">
         {currentUser === undefined ? (
-          <div className="flex items-center justify-center bg-secondary rounded-full size-10">
+          <div className="flex items-center justify-center bg-secondary dark:hover:bg-[#404346] dark:bg-[#333334] rounded-full size-10">
             <Loader className="animate-spin text-muted-foreground size-5" />
           </div>
         ) : (
@@ -170,7 +170,7 @@ export default function PostEditor() {
         <DialogTrigger asChild>
           <Button
             variant="ghost"
-            className="w-full justify-start rounded-full bg-secondary hover:bg-[#EFEFEF] dark:hover:bg-secondary/50 px-4 py-5"
+            className="w-full justify-start rounded-full bg-secondary hover:bg-[#EFEFEF] dark:bg-[#333334] dark:hover:bg-[#404346] px-4 py-5"
           >
             <div className="flex items-center gap-4 w-full text-left">
               <span className="text-muted-foreground">

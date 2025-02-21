@@ -395,7 +395,7 @@ export default function UserPage() {
                   >
                     <Button
                       variant="outline"
-                      className="gap-2 px-5 py-3 sm:py-5 shadow-none"
+                      className="gap-2 px-5 py-3 sm:py-5 rounded-lg shadow-none border dark:border-[#37393c] bg-secondary/50 p-4 transition-all hover:bg-accent/80"
                     >
                       <Edit className="h-4 w-4" /> Edit Profile
                     </Button>
@@ -420,7 +420,7 @@ export default function UserPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">
               {userPosts !== undefined ? (
-                <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/50">
+                <div className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/80">
                   <div className="rounded-full bg-primary/10 p-3 text-primary">
                     <Edit />
                   </div>
@@ -446,7 +446,7 @@ export default function UserPage() {
                 <div
                   role="button"
                   onClick={() => setFollowersDialogOpen(true)}
-                  className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/50"
+                  className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/80"
                 >
                   <div className="rounded-full bg-primary/10 p-3 text-primary">
                     <svg
@@ -488,7 +488,7 @@ export default function UserPage() {
                 <div
                   role="button"
                   onClick={() => setFollowingDialogOpen(true)}
-                  className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/50"
+                  className="flex items-center gap-4 rounded-lg border bg-secondary/50 p-4 transition-all hover:bg-accent/80"
                 >
                   <div className="rounded-full bg-primary/10 p-3 text-primary">
                     <svg
@@ -566,7 +566,7 @@ export default function UserPage() {
                 />
               ))
             ) : (
-              <p>
+              <p className="text-muted-foreground">
                 {isOwner
                   ? "You haven't posted anything yet."
                   : "This user hasn't posted anything yet."}

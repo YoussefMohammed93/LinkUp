@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
-
 import {
   Dialog,
   DialogContent,
@@ -11,7 +10,6 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
-
 import { Button } from "./ui/button";
 import { Loader, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -180,7 +178,7 @@ export default function FollowListDialog({
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10"
+              className="w-full pl-10 dark:border-none"
             />
           </div>
         </div>

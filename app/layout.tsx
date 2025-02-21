@@ -23,7 +23,7 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Loop",
+  title: "LinkUp",
   description: "Description",
 };
 

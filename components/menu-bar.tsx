@@ -78,7 +78,7 @@ export default function MenuBar({ className }: MenuBarProps) {
         {currentUser === undefined ? (
           <>
             <Skeleton className="w-40 h-4 my-1" />
-            <Skeleton className="w-52 h-4 my-1" />
+            <Skeleton className="w-44 h-4 my-1" />
           </>
         ) : (
           <>
@@ -97,7 +97,7 @@ export default function MenuBar({ className }: MenuBarProps) {
             key={title}
             variant="ghost"
             className={cn(
-              "flex items-center justify-start gap-2 w-full py-1 px-3",
+              "flex items-center justify-start gap-2 w-full py-1 px-3 hover:bg-secondary",
               index === 0
                 ? "lg:rounded-tl-lg lg:rounded-tr-lg lg:rounded-b-none"
                 : index === menuItems.length - 1
