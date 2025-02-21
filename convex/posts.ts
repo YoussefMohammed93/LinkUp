@@ -96,3 +96,29 @@ export const getUserPosts = query({
       .collect();
   },
 });
+
+// Query: Get posts by users that the current user follows
+export const getFollowingPosts = query({
+  args: {},
+  async handler(ctx) {
+    const currentUser = await getCurrentUser(ctx);
+    if (!currentUser) throw new Error("Not authenticated");
+
+    const followRecords = await ctx.db
+      .query("follows")
+      .withIndex("byFollower", (q) => q.eq("followerId", currentUser._id))
+      .collect();
+
+    const followingIds = followRecords.map((record) => record.followingId);
+
+    if (followingIds.length === 0) return [];
+
+    return await ctx.db
+      .query("posts")
+      .filter((q) =>
+        q.or(...followingIds.map((id) => q.eq(q.field("authorId"), id)))
+      )
+      .order("desc")
+      .collect();
+  },
+});

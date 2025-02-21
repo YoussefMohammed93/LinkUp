@@ -1,6 +1,7 @@
 import PostEditor from "@/components/post-editor";
 import { PostsList } from "@/components/posts-list";
 import PeopleSidebar from "@/components/people-sidebar";
+import { FollowingPosts } from "@/components/following-posts";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function MainPage() {
@@ -21,8 +22,7 @@ export default function MainPage() {
             <PostsList />
           </TabsContent>
           <TabsContent value="following">
-            {/* <FollowingFeed /> */}
-            Following
+            <FollowingPosts />
           </TabsContent>
         </Tabs>
       </div>
