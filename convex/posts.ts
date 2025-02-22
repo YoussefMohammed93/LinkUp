@@ -7,8 +7,9 @@ export const createPost = mutation({
   args: {
     content: v.string(),
     images: v.optional(v.array(v.string())),
+    visibility: v.union(v.literal("public"), v.literal("friends-only")),
   },
-  handler: async (ctx, { content, images }) => {
+  handler: async (ctx, { content, images, visibility }) => {
     const user = await getCurrentUser(ctx);
     if (!user) {
       throw new Error("Unauthorized: User not found.");
@@ -21,6 +22,7 @@ export const createPost = mutation({
       authorImageUrl: user.imageUrl,
       images: images || [],
       createdAt: Date.now(),
+      visibility,
     };
 
     await ctx.db.insert("posts", post);
@@ -87,13 +89,22 @@ export const deletePost = mutation({
 
 // Query: Get all posts by a specific user
 export const getUserPosts = query({
-  args: { userId: v.id("users") },
-  handler: async (ctx, { userId }) => {
-    return await ctx.db
+  args: {
+    userId: v.id("users"),
+    includeFriendsPosts: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { userId, includeFriendsPosts }) => {
+    let postsQuery = ctx.db
       .query("posts")
-      .withIndex("byAuthor", (q) => q.eq("authorId", userId))
-      .order("desc")
-      .collect();
+      .withIndex("byAuthor", (q) => q.eq("authorId", userId));
+
+    if (!includeFriendsPosts) {
+      postsQuery = postsQuery.filter((q) =>
+        q.eq(q.field("visibility"), "public")
+      );
+    }
+
+    return await postsQuery.order("desc").collect();
   },
 });
 
@@ -120,5 +131,76 @@ export const getFollowingPosts = query({
       )
       .order("desc")
       .collect();
+  },
+});
+
+// Query: Get posts from the feed (public posts and friends-only posts from followed users)
+export const getFeedPosts = query({
+  args: { currentUserId: v.optional(v.id("users")) },
+  async handler(ctx, { currentUserId }) {
+    let currentUser = await getCurrentUser(ctx);
+    if (!currentUser && currentUserId) {
+      currentUser = await ctx.db.get(currentUserId);
+    }
+
+    if (!currentUser) {
+      return await ctx.db
+        .query("posts")
+        .filter((q) => q.eq(q.field("visibility"), "public"))
+        .order("desc")
+        .collect();
+    }
+
+    const ownPosts = await ctx.db
+      .query("posts")
+      .filter((q) => q.eq(q.field("authorId"), currentUser._id))
+      .order("desc")
+      .collect();
+
+    const publicPosts = await ctx.db
+      .query("posts")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("visibility"), "public"),
+          q.neq(q.field("authorId"), currentUser._id)
+        )
+      )
+      .order("desc")
+      .collect();
+
+    const friendPosts = await ctx.db
+      .query("posts")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("visibility"), "friends-only"),
+          q.neq(q.field("authorId"), currentUser._id)
+        )
+      )
+      .order("desc")
+      .collect();
+
+    const feedFriendPosts = [];
+
+    for (const post of friendPosts) {
+      const currentFollows = await ctx.db
+        .query("follows")
+        .withIndex("byFollower", (q) => q.eq("followerId", currentUser._id))
+        .filter((q) => q.eq(q.field("followingId"), post.authorId))
+        .unique();
+
+      const authorFollows = await ctx.db
+        .query("follows")
+        .withIndex("byFollower", (q) => q.eq("followerId", post.authorId))
+        .filter((q) => q.eq(q.field("followingId"), currentUser._id))
+        .unique();
+
+      if (currentFollows && authorFollows) {
+        feedFriendPosts.push(post);
+      }
+    }
+
+    const allPosts = [...ownPosts, ...publicPosts, ...feedFriendPosts];
+
+    return allPosts.sort((a, b) => b.createdAt - a.createdAt);
   },
 });

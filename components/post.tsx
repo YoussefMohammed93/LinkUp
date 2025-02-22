@@ -10,6 +10,7 @@ import {
   UserX,
   Flag,
   UserMinus,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -61,6 +62,7 @@ export interface PostProps {
     images: string[];
     createdAt: number;
     authorImageUrl?: string;
+    visibility: "public" | "friends-only";
   };
   currentUserId?: Id<"users">;
   onDelete: (postId: Id<"posts">) => Promise<void>;
@@ -178,7 +180,12 @@ export function Post({ post, onDelete }: PostProps) {
                 </div>
               </Link>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Globe className="size-3" /> {formattedDate}
+                {post.visibility === "public" ? (
+                  <Globe className="size-3" />
+                ) : (
+                  <Users className="size-3" />
+                )}
+                {formattedDate}
               </div>
             </div>
           </div>

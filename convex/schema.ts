@@ -20,6 +20,7 @@ export default defineSchema({
     authorImageUrl: v.optional(v.string()),
     images: v.optional(v.array(v.string())),
     createdAt: v.number(),
+    visibility: v.union(v.literal("public"), v.literal("friends-only")),
   })
     .index("byAuthor", ["authorId"])
     .index("byCreationTime", ["createdAt"]),

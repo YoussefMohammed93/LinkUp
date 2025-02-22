@@ -14,7 +14,7 @@ export default function InfinitePostsList({
 }: {
   currentUserId?: Id<"users">;
 }) {
-  const posts = useQuery(api.posts.getPosts);
+  const posts = useQuery(api.posts.getFeedPosts, { currentUserId });
   const [visibleCount, setVisibleCount] = useState(5);
 
   const fetchMorePosts = () => {

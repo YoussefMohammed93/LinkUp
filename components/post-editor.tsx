@@ -12,6 +12,14 @@ import {
 import dynamic from "next/dynamic";
 import { Skeleton } from "./ui/skeleton";
 import { useDropzone } from "react-dropzone";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Globe, Users } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { useEdgeStore } from "@/lib/edgestore";
 import { Button } from "@/components/ui/button";
@@ -50,6 +58,9 @@ export default function PostEditor() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [avatarLoading, setAvatarLoading] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [visibility, setVisibility] = useState<"public" | "friends-only">(
+    "public"
+  );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const currentUser = useQuery(api.users.currentUser);
@@ -109,7 +120,9 @@ export default function PostEditor() {
       await createPostMutation({
         content,
         images: uploadedImageUrls,
+        visibility,
       });
+
       toast.success("Post created successfully!");
       playAudio();
       setOpen(false);
@@ -185,7 +198,7 @@ export default function PostEditor() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center gap-4 border-b p-4">
-              <div className="relative size-12">
+              <div className="relative size-16">
                 <Image
                   src={currentUser?.imageUrl || "/avatar-placeholder.png"}
                   alt="Avatar"
@@ -193,19 +206,40 @@ export default function PostEditor() {
                   className="rounded-full object-cover"
                 />
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 <p className="font-semibold">
                   {currentUser?.firstName} {currentUser?.lastName}
                 </p>
-                <p className="text-muted-foreground text-sm font-light">
-                  {currentUser?.jobTitle}
-                </p>
+                <Select
+                  value={visibility}
+                  onValueChange={(value) =>
+                    setVisibility(value as "public" | "friends-only")
+                  }
+                >
+                  <SelectTrigger className="h-8 w-fit gap-1.5 px-3 text-xs shadow-none">
+                    {visibility === "public" ? (
+                      <Globe className="size-3.5" />
+                    ) : (
+                      <Users className="size-3.5" />
+                    )}
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent align="start">
+                    <SelectItem value="public" className="text-sm">
+                      <div className="flex items-center gap-2">Public</div>
+                    </SelectItem>
+                    <SelectItem value="friends-only" className="text-sm">
+                      <div className="flex items-center gap-2">Friends</div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="p-4">
               <textarea
                 ref={textareaRef}
                 value={content}
+                autoFocus
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={`What's on your mind, ${currentUser?.firstName}?`}
                 className="w-full min-h-[120px] p-3 resize-none focus:outline-none text-lg rounded-xl dark:bg-popover placeholder:text-muted-foreground/80"
@@ -303,12 +337,12 @@ export default function PostEditor() {
                 >
                   {isPosting ? (
                     <>
-                      <Loader className="h-4 w-4 animate-spin" />
+                      <Loader className="size-4 animate-spin" />
                       Posting...
                     </>
                   ) : (
                     <>
-                      <Edit /> Post
+                      <Edit className="size-4" /> Post
                     </>
                   )}
                 </Button>

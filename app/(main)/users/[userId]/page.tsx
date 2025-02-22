@@ -71,6 +71,12 @@ export default function UserPage() {
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
   const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
 
+  const isFriend = Boolean(
+    currentUser && user && isFollowing === true && isFollowedBy === true
+  );
+
+  const includeFriendsPosts = isOwner ? true : isFriend;
+
   const handleToggleFollow = async () => {
     try {
       if (!user) {
@@ -141,6 +147,7 @@ export default function UserPage() {
 
   const userPosts = useQuery(api.posts.getUserPosts, {
     userId: user?._id as Id<"users">,
+    includeFriendsPosts,
   });
 
   const handleDeletePost = async (postId: string) => {
