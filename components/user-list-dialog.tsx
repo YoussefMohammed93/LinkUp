@@ -230,7 +230,7 @@ export default function FollowListDialog({
                             {user?.firstName} {user?.lastName}
                           </span>
                           <span className="text-sm font-light text-muted-foreground">
-                            {user?.jobTitle || "User"}
+                            {user?.jobTitle || ""}
                           </span>
                         </div>
                       </Link>

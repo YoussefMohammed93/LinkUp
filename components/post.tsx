@@ -36,6 +36,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import React, { useState } from "react";
+import { Skeleton } from "./ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
@@ -93,6 +94,7 @@ export function Post({ post, onDelete }: PostProps) {
   const unlikePostMutation = useMutation(api.likes.unlikePost);
   const hasLiked = useQuery(api.likes.hasLiked, { postId: _id });
   const likeCount = useQuery(api.likes.countLikes, { postId: _id });
+  const isLikesLoading = hasLiked === undefined || likeCount === undefined;
 
   const deletePostMutation = useMutation(api.posts.deletePost);
   const unfollowUserMutation = useMutation(api.follows.unfollowUser);
@@ -167,7 +169,7 @@ export function Post({ post, onDelete }: PostProps) {
     if (hasBookmarked) {
       try {
         await removeBookmarkMutation({ postId: _id });
-        toast.success("Removed from bookmarks");
+        toast.success("Removed from bookmarks!");
       } catch (error) {
         console.error("Error removing bookmark:", error);
         toast.error("Failed to remove bookmark");
@@ -175,7 +177,7 @@ export function Post({ post, onDelete }: PostProps) {
     } else {
       try {
         await addBookmarkMutation({ postId: _id });
-        toast.success("Added to bookmarks");
+        toast.success("Added to bookmarks!");
       } catch (error) {
         console.error("Error adding bookmark:", error);
         toast.error("Failed to add bookmark");
@@ -383,12 +385,23 @@ export function Post({ post, onDelete }: PostProps) {
               variant="ghost"
               onClick={hasLiked ? handleUnlike : handleLike}
               className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
+              disabled={isLikesLoading}
             >
-              <Heart
-                className={`size-5 ${hasLiked ? "fill-red-500 text-red-500" : ""}`}
-              />
-              <span>{formatLikes(likeCount || 0)}</span>
+              {isLikesLoading ? (
+                <>
+                  <Skeleton className="h-5 w-6 rounded-full dark:bg-card border" />
+                  <Skeleton className="h-5 w-8 dark:bg-card border rounded-full" />
+                </>
+              ) : (
+                <>
+                  <Heart
+                    className={`size-5 ${hasLiked ? "fill-red-500 text-red-500" : ""}`}
+                  />
+                  <span>{formatLikes(likeCount || 0)}</span>
+                </>
+              )}
             </Button>
+
             <Button
               variant="ghost"
               size="sm"

@@ -185,6 +185,8 @@ export default function PeopleSidebar() {
     )
     .slice(0, 3);
 
+  const currentYear = new Date().getFullYear();
+
   if (sidebarLoading) {
     return (
       <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none space-y-5 lg:block xl:w-[320px]">
@@ -210,6 +212,16 @@ export default function PeopleSidebar() {
             ))}
           </div>
         </div>
+        <div className="flex items-center gap-1 pl-1 text-xs text-muted-foreground">
+          <Image
+            src="/favicon.ico"
+            alt="logo"
+            priority
+            width={22}
+            height={22}
+          />
+          {`LinkUp Corporation © ${currentYear}`}
+        </div>
       </aside>
     );
   }
@@ -234,6 +246,10 @@ export default function PeopleSidebar() {
             ))
           )}
         </div>
+      </div>
+      <div className="flex items-center gap-1 pl-1 text-xs text-muted-foreground">
+        <Image src="/favicon.ico" alt="logo" priority width={22} height={22} />
+        {`LinkUp Corporation © ${currentYear}`}
       </div>
     </aside>
   );

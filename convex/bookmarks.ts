@@ -78,3 +78,28 @@ export const hasBookmarked = query({
     return Boolean(bookmark);
   },
 });
+
+// Query: Get all bookmarked posts for the current user
+export const getBookmarkedPosts = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
+
+    const bookmarks = await ctx.db
+      .query("bookmarks")
+      .filter((q) => q.eq(q.field("userId"), user._id))
+      .collect();
+
+    const postIds = bookmarks.map((bookmark) => bookmark.postId);
+    if (postIds.length === 0) return [];
+
+    const posts = await ctx.db
+      .query("posts")
+      .filter((q) => q.or(...postIds.map((id) => q.eq(q.field("_id"), id))))
+      .order("desc")
+      .collect();
+
+    return posts;
+  },
+});

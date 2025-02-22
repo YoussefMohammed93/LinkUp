@@ -242,7 +242,7 @@ export default function PostEditor() {
                 autoFocus
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={`What's on your mind, ${currentUser?.firstName}?`}
-                className="w-full min-h-[120px] p-3 resize-none focus:outline-none text-lg rounded-xl dark:bg-popover placeholder:text-muted-foreground/80"
+                className="w-full min-h-[120px] p-3 resize-none border focus:outline-none text-lg rounded-xl dark:bg-popover placeholder:text-muted-foreground/80"
                 maxLength={500}
               />
               <div
@@ -319,7 +319,7 @@ export default function PostEditor() {
                           onEmojiClick={(e) => insertEmoji(e.emoji)}
                           skinTonesDisabled
                           searchDisabled
-                          className="max-w-[320px] max-h-60 sm:max-w-[400px] overflow-y-auto"
+                          className="max-w-[320px] max-h-60 sm:max-w-[400px] overflow-y-auto dark:border-none dark:bg-card"
                           previewConfig={{ showPreview: false }}
                         />
                       </div>
