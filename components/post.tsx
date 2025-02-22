@@ -41,6 +41,7 @@ import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import { useQuery, useMutation } from "convex/react";
+import OnlineStatusIndicator from "./online-status-indicator";
 
 export type PostDocument = {
   _id: Id<"posts">;
@@ -73,22 +74,30 @@ export function Post({ post, onDelete }: PostProps) {
   const { _id, authorId, authorName, authorImage, content, createdAt, images } =
     post;
 
+  const authorUser = useQuery(api.users.getUserById, { id: authorId });
+
   const currentUser = useQuery(api.users.currentUser) as {
     _id: Id<"users">;
   } | null;
 
-  const isFollowingQuery = useQuery(
+  const isFollowing = useQuery(
     api.follows.isFollowing,
     currentUser
       ? { followerId: currentUser._id, followingId: authorId }
       : "skip"
   );
 
+  const isFollowedBy = useQuery(
+    api.follows.isFollowedBy,
+    currentUser
+      ? { followerId: authorId, followingId: currentUser._id }
+      : "skip"
+  );
+
+  const isFriends = currentUser && isFollowing && isFollowedBy;
+
   const [openDialog, setOpenDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const isAuthor = currentUser?._id === authorId;
-  const isFriend = currentUser ? isFollowingQuery : false;
 
   const likePostMutation = useMutation(api.likes.likePost);
   const unlikePostMutation = useMutation(api.likes.unlikePost);
@@ -191,15 +200,22 @@ export function Post({ post, onDelete }: PostProps) {
         <CardHeader>
           <div className="flex items-center">
             <Link href={`/users/${authorId}`}>
-              <Image
-                src={authorImage}
-                alt={authorName}
-                width={100}
-                height={100}
-                className="w-10 h-10 rounded-full object-cover cursor-pointer"
-              />
+              <div className="relative">
+                <Image
+                  src={authorImage}
+                  alt={authorName}
+                  width={100}
+                  height={100}
+                  className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                />
+                {(currentUser?._id === authorId || isFriends) && (
+                  <OnlineStatusIndicator
+                    lastActiveAt={authorUser?.lastActiveAt}
+                  />
+                )}
+              </div>
             </Link>
-            <div className="ml-3">
+            <div className="ml-4">
               <Link href={`/users/${authorId}`}>
                 <div className="font-semibold text-foreground cursor-pointer hover:underline">
                   {authorName}
@@ -231,7 +247,7 @@ export function Post({ post, onDelete }: PostProps) {
               role="menu"
               aria-label="Post actions"
             >
-              {isAuthor && (
+              {currentUser?._id === authorId && (
                 <DropdownMenuItem
                   onSelect={() => setOpenDialog(true)}
                   className="p-2.5 dark:hover:bg-secondary"
@@ -254,8 +270,7 @@ export function Post({ post, onDelete }: PostProps) {
                   {hasBookmarked ? "Remove from Bookmarks" : "Add to Bookmarks"}
                 </span>
               </DropdownMenuItem>
-
-              {!isAuthor && (
+              {currentUser?._id !== authorId && (
                 <>
                   <DropdownMenuItem
                     onSelect={() => {}}
@@ -291,7 +306,7 @@ export function Post({ post, onDelete }: PostProps) {
                   </DropdownMenuItem>
                 </>
               )}
-              {isFriend && (
+              {currentUser && isFollowing && (
                 <DropdownMenuItem
                   onSelect={handleUnfollow}
                   className="p-2.5 dark:hover:bg-secondary"
@@ -401,7 +416,6 @@ export function Post({ post, onDelete }: PostProps) {
                 </>
               )}
             </Button>
-
             <Button
               variant="ghost"
               size="sm"

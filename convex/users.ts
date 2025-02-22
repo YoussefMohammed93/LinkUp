@@ -122,3 +122,20 @@ export const getUserById = query({
     return user;
   },
 });
+
+export const updateOnlineStatus = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const now = Date.now();
+    const user = await userByClerkUserId(ctx, identity.subject);
+
+    if (!user) throw new Error("User not found");
+
+    await ctx.db.patch(user._id, { lastActiveAt: now });
+
+    return { success: true, lastActiveAt: now };
+  },
+});

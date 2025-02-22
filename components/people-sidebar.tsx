@@ -144,7 +144,7 @@ function SuggestedUser({ user, currentUser, isLast }: SuggestedUserProps) {
             {user.firstName} {user.lastName}
           </h3>
           <p className="text-xs text-muted-foreground truncate">
-            {user.jobTitle || "User"}
+            {user.jobTitle || ""}
           </p>
         </div>
       </Link>

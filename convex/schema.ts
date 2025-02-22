@@ -11,6 +11,7 @@ export default defineSchema({
     jobTitle: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     coverImageUrl: v.optional(v.union(v.string(), v.null())),
+    lastActiveAt: v.optional(v.number()),
   }).index("byClerkUserId", ["clerkUserId"]),
 
   posts: defineTable({
