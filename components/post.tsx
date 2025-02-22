@@ -97,6 +97,10 @@ export function Post({ post, onDelete }: PostProps) {
   const deletePostMutation = useMutation(api.posts.deletePost);
   const unfollowUserMutation = useMutation(api.follows.unfollowUser);
 
+  const addBookmarkMutation = useMutation(api.bookmarks.addBookmark);
+  const removeBookmarkMutation = useMutation(api.bookmarks.removeBookmark);
+  const hasBookmarked = useQuery(api.bookmarks.hasBookmarked, { postId: _id });
+
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -159,6 +163,26 @@ export function Post({ post, onDelete }: PostProps) {
     }
   };
 
+  const handleToggleBookmark = async () => {
+    if (hasBookmarked) {
+      try {
+        await removeBookmarkMutation({ postId: _id });
+        toast.success("Removed from bookmarks");
+      } catch (error) {
+        console.error("Error removing bookmark:", error);
+        toast.error("Failed to remove bookmark");
+      }
+    } else {
+      try {
+        await addBookmarkMutation({ postId: _id });
+        toast.success("Added to bookmarks");
+      } catch (error) {
+        console.error("Error adding bookmark:", error);
+        toast.error("Failed to add bookmark");
+      }
+    }
+  };
+
   return (
     <>
       <Card className="relative rounded-lg border shadow-none bg-card dark:bg-[#252728] text-card-foreground">
@@ -216,13 +240,19 @@ export function Post({ post, onDelete }: PostProps) {
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
-                onSelect={() => {}}
+                onSelect={handleToggleBookmark}
                 className="p-2.5 dark:hover:bg-secondary"
                 role="menuitem"
               >
-                <Bookmark aria-hidden="true" />
-                <span>Add to Bookmarks</span>
+                <Bookmark
+                  aria-hidden="true"
+                  className={`${hasBookmarked ? "fill-primary text-primary" : ""}`}
+                />
+                <span>
+                  {hasBookmarked ? "Remove from Bookmarks" : "Add to Bookmarks"}
+                </span>
               </DropdownMenuItem>
+
               {!isAuthor && (
                 <>
                   <DropdownMenuItem
@@ -379,9 +409,12 @@ export function Post({ post, onDelete }: PostProps) {
             <Button
               variant="ghost"
               size="sm"
+              onClick={handleToggleBookmark}
               className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
-              <Bookmark className="size-5" />
+              <Bookmark
+                className={`size-5 ${hasBookmarked ? "fill-primary text-primary" : ""}`}
+              />
             </Button>
           </div>
         </CardFooter>

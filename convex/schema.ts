@@ -37,4 +37,12 @@ export default defineSchema({
     userId: v.id("users"),
     createdAt: v.number(),
   }).index("byPost", ["postId"]),
+
+  bookmarks: defineTable({
+    postId: v.id("posts"),
+    userId: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("byPost", ["postId"])
+    .index("byUser", ["userId"]),
 });
