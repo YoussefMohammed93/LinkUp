@@ -102,3 +102,7 @@ body {
 .dark .epr-emoji-category-label {
   background: #161718;
 }
+
+.focus-visible\:ring-1:focus-visible {
+  box-shadow: none !important;
+}

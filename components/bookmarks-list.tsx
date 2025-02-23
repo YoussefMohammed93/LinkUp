@@ -33,7 +33,7 @@ export default function BookmarksList() {
       </h1>
       {bookmarkedPosts.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          No bookmarks available.
+          You haven&apos;t bookmarked any posts yet.
         </div>
       ) : (
         <InfiniteScroll

@@ -243,19 +243,19 @@ export default function PostEditor() {
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={`What's on your mind, ${currentUser?.firstName}?`}
                 className="w-full min-h-[120px] p-3 resize-none border focus:outline-none text-lg rounded-xl dark:bg-popover placeholder:text-muted-foreground/80"
-                maxLength={500}
+                maxLength={1000}
               />
               <div
                 className={`text-xs text-right pb-3.5 ${
-                  content.length >= 480
+                  content.length >= 980
                     ? "text-destructive"
                     : "text-muted-foreground"
                 }`}
               >
-                {content.length}/500
-                {content.length >= 450 && (
+                {content.length}/1000
+                {content.length >= 950 && (
                   <span className="block text-xs mt-1">
-                    {500 - content.length} characters remaining
+                    {1000 - content.length} characters remaining
                   </span>
                 )}
               </div>
@@ -288,8 +288,8 @@ export default function PostEditor() {
               </div>
             )}
             <div className="border rounded-lg p-4 m-4 space-y-4 dark:bg-popover">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
+              <div className="flex sm:items-center justify-between gap-2 flex-col sm:flex-row items-start">
+                <span className="text-sm text-muted-foreground pl-3 sm:pl-0">
                   Add to your post
                 </span>
                 <div className="flex items-center gap-2">

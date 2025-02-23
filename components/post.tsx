@@ -12,6 +12,7 @@ import {
   Flag,
   UserMinus,
   Users,
+  UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -39,7 +40,9 @@ import {
 import React, { useState } from "react";
 import ShareDialog from "./share-dialog";
 import { Skeleton } from "./ui/skeleton";
+import ZoomableImage from "./zoomable-image";
 import { api } from "@/convex/_generated/api";
+import ExpandableText from "./expandable-text";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import { useQuery, useMutation } from "convex/react";
@@ -114,9 +117,10 @@ export function Post({ post, onDelete }: PostProps) {
   const removeBookmarkMutation = useMutation(api.bookmarks.removeBookmark);
   const hasBookmarked = useQuery(api.bookmarks.hasBookmarked, { postId: _id });
 
-  const unfollowUserMutation = useMutation(api.follows.unfollowUser);
-
   const deletePostMutation = useMutation(api.posts.deletePost);
+
+  const followUserMutation = useMutation(api.follows.followUser);
+  const unfollowUserMutation = useMutation(api.follows.unfollowUser);
 
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     month: "short",
@@ -129,6 +133,36 @@ export function Post({ post, onDelete }: PostProps) {
 
   const shouldAddMargin =
     content.trim().length > 0 && (images?.length > 0 || isShared);
+
+  const handleFollow = async () => {
+    if (!currentUser) {
+      toast.error("You must be logged in to follow a user.");
+      return;
+    }
+    try {
+      await followUserMutation({ targetUserId: authorId });
+      toast.success(`You are now following ${authorName}!`);
+    } catch (error) {
+      toast.error(
+        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  };
+
+  const handleUnfollow = async () => {
+    if (!currentUser) {
+      toast.error("You must be logged in to unfollow a user.");
+      return;
+    }
+    try {
+      await unfollowUserMutation({ targetUserId: authorId });
+      toast.success(`You have unfollowed ${authorName}!`);
+    } catch (error) {
+      toast.error(
+        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  };
 
   const handleLike = async () => {
     try {
@@ -162,21 +196,6 @@ export function Post({ post, onDelete }: PostProps) {
     } finally {
       setIsDeleting(false);
       setOpenDialog(false);
-    }
-  };
-
-  const handleUnfollow = async () => {
-    if (!currentUser) {
-      toast.error("You must be logged in to unfollow a user.");
-      return;
-    }
-    try {
-      await unfollowUserMutation({ targetUserId: authorId });
-      toast.success(`You have unfollowed ${authorName}!`);
-    } catch (error) {
-      toast.error(
-        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
     }
   };
 
@@ -263,10 +282,14 @@ export function Post({ post, onDelete }: PostProps) {
                   role="menuitem"
                 >
                   <Trash aria-hidden="true" />
-                  <span>Delete post</span>
+                  <div className="ml-2">
+                    <span>Delete post</span>
+                    <p className="text-xs text-muted-foreground">
+                      This will permanently remove your post.
+                    </p>
+                  </div>
                 </DropdownMenuItem>
               )}
-
               <DropdownMenuItem
                 onSelect={handleToggleBookmark}
                 className="p-2.5 dark:hover:bg-secondary"
@@ -276,11 +299,52 @@ export function Post({ post, onDelete }: PostProps) {
                   aria-hidden="true"
                   className={hasBookmarked ? "fill-primary text-primary" : ""}
                 />
-                <span>
-                  {hasBookmarked ? "Remove from Bookmarks" : "Add to Bookmarks"}
-                </span>
+                <div className="ml-2">
+                  <span>
+                    {hasBookmarked
+                      ? "Remove from Bookmarks"
+                      : "Add to Bookmarks"}
+                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    {hasBookmarked
+                      ? "Removes the post from your bookmarks."
+                      : "Saves the post to your bookmarks."}
+                  </p>
+                </div>
               </DropdownMenuItem>
-
+              {currentUser && currentUser._id !== authorId && (
+                <>
+                  {isFollowing ? (
+                    <DropdownMenuItem
+                      onSelect={handleUnfollow}
+                      className="p-2.5 dark:hover:bg-secondary"
+                      role="menuitem"
+                    >
+                      <UserMinus aria-hidden="true" />
+                      <div className="ml-2">
+                        <span>Unfollow {authorName}</span>
+                        <p className="text-xs text-muted-foreground">
+                          Stop following {authorName} and miss their posts.
+                        </p>
+                      </div>
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem
+                      onSelect={handleFollow}
+                      className="p-2.5 dark:hover:bg-secondary"
+                      role="menuitem"
+                    >
+                      <UserPlus aria-hidden="true" />
+                      <div className="ml-2">
+                        <span>Follow {authorName}</span>
+                        <p className="text-xs text-muted-foreground">
+                          Follow {authorName} to see their latest posts.
+                        </p>
+                      </div>
+                    </DropdownMenuItem>
+                  )}
+                </>
+              )}
               {currentUser?._id !== authorId && (
                 <>
                   <DropdownMenuItem
@@ -289,7 +353,7 @@ export function Post({ post, onDelete }: PostProps) {
                     role="menuitem"
                   >
                     <UserX aria-hidden="true" />
-                    <div>
+                    <div className="ml-2">
                       <span>Block {authorName}</span>
                       <p
                         className="text-xs text-muted-foreground"
@@ -305,7 +369,7 @@ export function Post({ post, onDelete }: PostProps) {
                     role="menuitem"
                   >
                     <Flag aria-hidden="true" />
-                    <div>
+                    <div className="ml-2">
                       <span>Report this post</span>
                       <p
                         className="text-xs text-muted-foreground"
@@ -317,24 +381,14 @@ export function Post({ post, onDelete }: PostProps) {
                   </DropdownMenuItem>
                 </>
               )}
-              {currentUser && isFollowing && (
-                <DropdownMenuItem
-                  onSelect={handleUnfollow}
-                  className="p-2.5 dark:hover:bg-secondary"
-                  role="menuitem"
-                >
-                  <UserMinus aria-hidden="true" />
-                  <span>Unfollow {authorName}</span>
-                </DropdownMenuItem>
-              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
         <CardContent>
           {content.trim().length > 0 && (
-            <p className={`text-foreground ${shouldAddMargin ? "mb-3" : ""}`}>
-              {content}
-            </p>
+            <div className={shouldAddMargin ? "mb-3" : ""}>
+              <ExpandableText text={content} />
+            </div>
           )}
           {sharedPostId && !sharedPost && (
             <div className="p-3 border rounded-md bg-card dark:bg-[#252728]">
@@ -355,81 +409,69 @@ export function Post({ post, onDelete }: PostProps) {
           )}
           {sharedPostId && sharedPost && (
             <div className="p-3 border rounded-md bg-card dark:bg-[#252728]">
-              <div>
+              <div className="flex items-center">
                 <Link href={`/users/${sharedPost.authorId}`}>
-                  <div className="flex items-center gap-2 cursor-pointer">
+                  <div className="relative">
                     <Image
                       src={
                         sharedPost.authorImageUrl || "/avatar-placeholder.png"
                       }
                       alt={sharedPost.authorName}
-                      width={40}
-                      height={40}
-                      className="w-10 h-10 rounded-full object-cover"
+                      width={100}
+                      height={100}
+                      className="w-10 h-10 rounded-full object-cover cursor-pointer"
                     />
-                    <div className="flex flex-col">
-                      <p className="font-semibold text-foreground">
-                        {sharedPost.authorName}
-                      </p>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(sharedPost.createdAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </span>
-                        <span
-                          aria-hidden="true"
-                          className="text-muted-foreground"
-                        >
-                          ·
-                        </span>
-                        {sharedPost.visibility === "public" ? (
-                          <Globe
-                            className="size-3 text-muted-foreground
-                          "
-                          />
-                        ) : (
-                          <Users
-                            className="size-3 text-muted-foreground
-                          "
-                          />
-                        )}
-                      </div>
-                    </div>
                   </div>
                 </Link>
+                <div className="ml-3">
+                  <Link href={`/users/${sharedPost.authorId}`}>
+                    <div className="font-semibold text-foreground cursor-pointer hover:underline">
+                      {sharedPost.authorName}
+                    </div>
+                  </Link>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span>
+                      {new Date(sharedPost.createdAt).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
+                    </span>
+                    <span aria-hidden="true" className="text-muted-foreground">
+                      ·
+                    </span>
+                    {sharedPost.visibility === "public" ? (
+                      <Globe className="size-3 text-muted-foreground" />
+                    ) : (
+                      <Users className="size-3 text-muted-foreground" />
+                    )}
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-foreground mb-2 mt-3">
-                {sharedPost.content}
-              </p>
+              <div className="mt-3">
+                <ExpandableText text={sharedPost.content} />
+              </div>
               {sharedPost.images && sharedPost.images.length > 0 && (
                 <>
                   {sharedPost.images.length === 1 ? (
-                    <div className="relative w-full h-[300px] sm:h-[400px]">
-                      <Image
-                        src={sharedPost.images[0]}
-                        alt="Original Post Image"
-                        fill
-                        className="object-cover rounded-lg"
-                      />
-                    </div>
+                    <ZoomableImage
+                      src={sharedPost.images[0]}
+                      alt="Original Post Image"
+                      className="relative w-full h-[300px] sm:h-[400px]"
+                    />
                   ) : (
                     <div className="mt-2 grid grid-cols-2 gap-3">
                       {sharedPost.images.map((image, index) => (
-                        <div key={index} className="relative aspect-[4/3]">
-                          <Image
-                            src={image}
-                            alt={`Original Post Image ${index + 1}`}
-                            fill
-                            className="object-cover rounded-lg"
-                          />
-                        </div>
+                        <ZoomableImage
+                          key={index}
+                          src={image}
+                          alt={`Original Post Image ${index + 1}`}
+                          className="relative aspect-[4/3]"
+                        />
                       ))}
                     </div>
                   )}
@@ -440,25 +482,20 @@ export function Post({ post, onDelete }: PostProps) {
           {images && images.length > 0 && (
             <>
               {images.length === 1 ? (
-                <div className="relative w-full h-[300px] sm:h-[400px]">
-                  <Image
-                    src={images[0]}
-                    alt="Post image"
-                    fill
-                    className="object-cover rounded-lg"
-                  />
-                </div>
+                <ZoomableImage
+                  src={images[0]}
+                  alt="Post image"
+                  className="relative w-full h-[300px] sm:h-[400px]"
+                />
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   {images.map((image, index) => (
-                    <div key={index} className="relative aspect-[4/3]">
-                      <Image
-                        src={image}
-                        alt={`Post image ${index + 1}`}
-                        fill
-                        className="object-cover rounded-lg"
-                      />
-                    </div>
+                    <ZoomableImage
+                      key={index}
+                      src={image}
+                      alt={`Post image ${index + 1}`}
+                      className="relative aspect-[4/3]"
+                    />
                   ))}
                 </div>
               )}

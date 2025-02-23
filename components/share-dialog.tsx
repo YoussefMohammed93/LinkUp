@@ -165,19 +165,19 @@ export default function ShareDialog({
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Say something about this..."
                 className="w-full min-h-[120px] p-3 resize-none border focus:outline-none text-lg rounded-xl dark:bg-popover placeholder:text-muted-foreground/80"
-                maxLength={500}
+                maxLength={1000}
               />
               <div
                 className={`text-xs text-right pb-3.5 ${
-                  content.length >= 480
+                  content.length >= 980
                     ? "text-destructive"
                     : "text-muted-foreground"
                 }`}
               >
-                {content.length}/500
-                {content.length >= 450 && (
+                {content.length}/1000
+                {content.length >= 950 && (
                   <span className="block text-xs mt-1">
-                    {500 - content.length} characters remaining
+                    {1000 - content.length} characters remaining
                   </span>
                 )}
               </div>
