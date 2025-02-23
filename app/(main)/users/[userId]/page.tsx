@@ -15,6 +15,7 @@ import { Edit, Loader2, Upload } from "lucide-react";
 import PeopleSidebar from "@/components/people-sidebar";
 import FollowListDialog from "@/components/user-list-dialog";
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
+import { ConfirmBlockDialog } from "@/components/confirm-block-dialog";
 
 function playAudio() {
   const audio = document.createElement("audio");
@@ -126,26 +127,6 @@ export default function UserPage() {
           `You are now following ${user.firstName} ${user.lastName || ""}!`
         );
         playAudio();
-      }
-    } catch (error) {
-      toast.error(
-        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    }
-  };
-
-  const handleToggleBlock = async () => {
-    if (!currentUser) {
-      toast.error("You must be logged in to block a user.");
-      return;
-    }
-    try {
-      if (!isBlocked) {
-        await blockUserMutation({ targetUserId: user!._id });
-        toast.success(`Blocked ${user!.firstName || user!.email}`);
-      } else {
-        await unblockUserMutation({ targetUserId: user!._id });
-        toast.success(`Unblocked ${user!.firstName || user!.email}`);
       }
     } catch (error) {
       toast.error(
@@ -456,29 +437,48 @@ export default function UserPage() {
                       <p className="text-xs text-muted-foreground">
                         User not available
                       </p>
-                    ) : isBlocked ? (
-                      <p className="text-xs text-muted-foreground">
-                        You have blocked this user
-                      </p>
                     ) : (
-                      <Button
-                        className="gap-1 px-4 py-3 sm:py-4 shadow-none"
-                        onClick={handleToggleFollow}
-                      >
-                        {isFollowing
-                          ? "Unfollow"
-                          : isFollowedBy
-                            ? "Follow Back"
-                            : "Follow"}
-                      </Button>
+                      <div className="flex items-center space-x-2">
+                        {!isBlocked && (
+                          <Button
+                            className="gap-1 px-4 py-3 sm:py-4 shadow-none"
+                            onClick={handleToggleFollow}
+                          >
+                            {isFollowing
+                              ? "Unfollow"
+                              : isFollowedBy
+                                ? "Follow Back"
+                                : "Follow"}
+                          </Button>
+                        )}
+                        {isBlocked ? (
+                          <Button
+                            variant="outline"
+                            className="ml-2 gap-1 px-4 py-3 sm:py-4 shadow-none dark:border-none"
+                            onClick={async () => {
+                              await unblockUserMutation({
+                                targetUserId: user._id,
+                              });
+                              toast.success(
+                                `Unblocked ${user.firstName} ${user.lastName}!`
+                              );
+                            }}
+                          >
+                            Unblock
+                          </Button>
+                        ) : (
+                          <ConfirmBlockDialog
+                            userId={user._id}
+                            userName={`${user.firstName} ${user.lastName || user.email}`}
+                            onConfirm={async () => {
+                              await blockUserMutation({
+                                targetUserId: user._id,
+                              });
+                            }}
+                          />
+                        )}
+                      </div>
                     )}
-                    <Button
-                      variant="destructive"
-                      className="ml-2 gap-1 px-4 py-3 sm:py-4 shadow-none"
-                      onClick={handleToggleBlock}
-                    >
-                      {isBlocked ? "Unblock" : "Block"}
-                    </Button>
                   </div>
                 ) : null
               ) : (

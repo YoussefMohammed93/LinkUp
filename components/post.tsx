@@ -108,6 +108,9 @@ export function Post({ post, onDelete }: PostProps) {
   const [openDialog, setOpenDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [isBlocking, setIsBlocking] = useState(false);
+  const [openBlockDialog, setOpenBlockDialog] = useState(false);
+
   const likePostMutation = useMutation(api.likes.likePost);
   const unlikePostMutation = useMutation(api.likes.unlikePost);
   const hasLiked = useQuery(api.likes.hasLiked, { postId: _id });
@@ -246,6 +249,18 @@ export function Post({ post, onDelete }: PostProps) {
     }
   };
 
+  const handleBlockToggleConfirm = async () => {
+    setIsBlocking(true);
+    try {
+      await handleBlockToggle();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsBlocking(false);
+      setOpenBlockDialog(false);
+    }
+  };
+
   const formatLikes = (count: number) => `${count} like${count > 1 ? "s" : ""}`;
 
   return (
@@ -375,7 +390,7 @@ export function Post({ post, onDelete }: PostProps) {
               {currentUser?._id !== authorId && (
                 <>
                   <DropdownMenuItem
-                    onSelect={handleBlockToggle}
+                    onSelect={() => setOpenBlockDialog(true)}
                     className="p-2.5 dark:hover:bg-secondary"
                     role="menuitem"
                   >
@@ -609,6 +624,43 @@ export function Post({ post, onDelete }: PostProps) {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={openBlockDialog} onOpenChange={setOpenBlockDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm {isBlocked ? "Unblock" : "Block"}</DialogTitle>
+            <DialogDescription className="pt-5">
+              Are you sure you want to {isBlocked ? "unblock" : "block"}{" "}
+              {authorName}? {" "}
+              {isBlocked
+                ? "They will be able to see and contact you."
+                : "They will no longer be able to interact with you."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 mt-2">
+            <Button
+              variant="outline"
+              onClick={() => setOpenBlockDialog(false)}
+              disabled={isBlocking}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBlockToggleConfirm}
+              disabled={isBlocking}
+            >
+              {isBlocking ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="animate-spin size-4" />
+                  {isBlocked ? "Unblocking..." : "Blocking..."}
+                </span>
+              ) : (
+                "Confirm"
+              )}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>
