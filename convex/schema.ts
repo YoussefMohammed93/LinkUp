@@ -47,4 +47,12 @@ export default defineSchema({
   })
     .index("byPost", ["postId"])
     .index("byUser", ["userId"]),
+
+  blocks: defineTable({
+    blockerId: v.id("users"),
+    blockedId: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("byBlocker", ["blockerId"])
+    .index("byBlocked", ["blockedId"]),
 });

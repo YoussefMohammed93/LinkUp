@@ -134,12 +134,11 @@ export const getFollowingPosts = query({
   },
 });
 
-// Query: Get posts from the feed (public posts and friends-only posts from followed users)
+// Query: Get posts for the feed
 export const getFeedPosts = query({
   args: { currentUserId: v.optional(v.id("users")) },
   async handler(ctx, { currentUserId }) {
     let currentUser = await getCurrentUser(ctx);
-
     if (!currentUser && currentUserId) {
       currentUser = await ctx.db.get(currentUserId);
     }
@@ -150,6 +149,26 @@ export const getFeedPosts = query({
         .filter((q) => q.eq(q.field("visibility"), "public"))
         .order("desc")
         .collect();
+    }
+
+    const blocks = await ctx.db
+      .query("blocks")
+      .filter((q) =>
+        q.or(
+          q.eq(q.field("blockerId"), currentUser._id),
+          q.eq(q.field("blockedId"), currentUser._id)
+        )
+      )
+      .collect();
+
+    const blockedIds = new Set<string>();
+    for (const block of blocks) {
+      if (block.blockerId === currentUser._id) {
+        blockedIds.add(block.blockedId);
+      }
+      if (block.blockedId === currentUser._id) {
+        blockedIds.add(block.blockerId);
+      }
     }
 
     const ownPosts = await ctx.db
@@ -181,7 +200,6 @@ export const getFeedPosts = query({
       .collect();
 
     const feedFriendPosts = [];
-
     for (const post of friendPosts) {
       const currentFollows = await ctx.db
         .query("follows")
@@ -201,8 +219,11 @@ export const getFeedPosts = query({
     }
 
     const allPosts = [...ownPosts, ...publicPosts, ...feedFriendPosts];
+    const filteredPosts = allPosts.filter(
+      (post) => !blockedIds.has(post.authorId)
+    );
 
-    return allPosts.sort((a, b) => b.createdAt - a.createdAt);
+    return filteredPosts.sort((a, b) => b.createdAt - a.createdAt);
   },
 });
 

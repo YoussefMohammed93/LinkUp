@@ -102,6 +102,7 @@ export function Post({ post, onDelete }: PostProps) {
       ? { followerId: authorId, followingId: currentUser._id }
       : "skip"
   );
+
   const isFriends = currentUser && isFollowing && isFollowedBy;
 
   const [openDialog, setOpenDialog] = useState(false);
@@ -122,6 +123,13 @@ export function Post({ post, onDelete }: PostProps) {
   const followUserMutation = useMutation(api.follows.followUser);
   const unfollowUserMutation = useMutation(api.follows.unfollowUser);
 
+  const blockUserMutation = useMutation(api.blocks.blockUser);
+  const unblockUserMutation = useMutation(api.blocks.unblockUser);
+  const blockedUsers = useQuery(api.blocks.getBlockedUsers) || [];
+  const isBlocked = blockedUsers.some(
+    (b: { blockedId: Id<"users"> }) => b.blockedId === authorId
+  );
+
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -130,7 +138,6 @@ export function Post({ post, onDelete }: PostProps) {
   });
 
   const isShared = !!sharedPostId;
-
   const shouldAddMargin =
     content.trim().length > 0 && (images?.length > 0 || isShared);
 
@@ -216,6 +223,26 @@ export function Post({ post, onDelete }: PostProps) {
         console.error("Error adding bookmark:", error);
         toast.error("Failed to add bookmark");
       }
+    }
+  };
+
+  const handleBlockToggle = async () => {
+    if (!currentUser) {
+      toast.error("You must be logged in to block a user.");
+      return;
+    }
+    try {
+      if (!isBlocked) {
+        await blockUserMutation({ targetUserId: authorId });
+        toast.success(`Blocked ${authorName}`);
+      } else {
+        await unblockUserMutation({ targetUserId: authorId });
+        toast.success(`Unblocked ${authorName}`);
+      }
+    } catch (error) {
+      toast.error(
+        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     }
   };
 
@@ -348,18 +375,21 @@ export function Post({ post, onDelete }: PostProps) {
               {currentUser?._id !== authorId && (
                 <>
                   <DropdownMenuItem
-                    onSelect={() => {}}
+                    onSelect={handleBlockToggle}
                     className="p-2.5 dark:hover:bg-secondary"
                     role="menuitem"
                   >
                     <UserX aria-hidden="true" />
                     <div className="ml-2">
-                      <span>Block {authorName}</span>
-                      <p
-                        className="text-xs text-muted-foreground"
-                        id="block-info"
-                      >
-                        You won&apos;t be able to see or contact each other.
+                      <span>
+                        {isBlocked
+                          ? `Unblock ${authorName}`
+                          : `Block ${authorName}`}
+                      </span>
+                      <p className="text-xs text-muted-foreground">
+                        {isBlocked
+                          ? "You will be able to see and contact each other."
+                          : "You won't be able to see or contact each other."}
                       </p>
                     </div>
                   </DropdownMenuItem>
@@ -371,10 +401,7 @@ export function Post({ post, onDelete }: PostProps) {
                     <Flag aria-hidden="true" />
                     <div className="ml-2">
                       <span>Report this post</span>
-                      <p
-                        className="text-xs text-muted-foreground"
-                        id="report-info"
-                      >
+                      <p className="text-xs text-muted-foreground">
                         We won&apos;t let {authorName} know who reported this.
                       </p>
                     </div>
@@ -560,7 +587,11 @@ export function Post({ post, onDelete }: PostProps) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setOpenDialog(false)}
+              className="dark:border-[#333333]"
+            >
               Cancel
             </Button>
             <Button

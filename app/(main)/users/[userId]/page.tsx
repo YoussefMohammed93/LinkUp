@@ -3,11 +3,11 @@
 import Image from "next/image";
 import { toast } from "sonner";
 import { Post } from "@/components/post";
-import { useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { useEdgeStore } from "@/lib/edgestore";
 import { Button } from "@/components/ui/button";
+import React, { useState, useRef } from "react";
 import { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useMutation } from "convex/react";
@@ -15,6 +15,22 @@ import { Edit, Loader2, Upload } from "lucide-react";
 import PeopleSidebar from "@/components/people-sidebar";
 import FollowListDialog from "@/components/user-list-dialog";
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
+
+function playAudio() {
+  const audio = document.createElement("audio");
+  const sourceM4a = document.createElement("source");
+
+  sourceM4a.src = "/audio.m4a";
+  sourceM4a.type = "audio/mp4";
+  audio.appendChild(sourceM4a);
+
+  const sourceMp3 = document.createElement("source");
+  sourceMp3.src = "/audio.mp3";
+  sourceMp3.type = "audio/mpeg";
+  audio.appendChild(sourceMp3);
+
+  audio.play().catch((err) => console.error("Audio playback failed:", err));
+}
 
 function formatCount(count: number): string {
   if (count >= 1000) {
@@ -26,10 +42,8 @@ function formatCount(count: number): string {
 export default function UserPage() {
   const { edgestore } = useEdgeStore();
   const updateUser = useMutation(api.users.updateUser);
-
   const { userId: id } = useParams();
   const userId = id as string;
-
   const user = useQuery(api.users.getUserById, { id: userId as Id<"users"> });
   const currentUser = useQuery(api.users.currentUser);
   const isOwner = currentUser && user && currentUser._id === user._id;
@@ -62,6 +76,20 @@ export default function UserPage() {
   const unfollowUserMutation = useMutation(api.follows.unfollowUser);
   const updateUserMutation = useMutation(api.users.updateUser);
 
+  const blockUserMutation = useMutation(api.blocks.blockUser);
+  const unblockUserMutation = useMutation(api.blocks.unblockUser);
+  const blockedList = useQuery(api.blocks.getBlockedUsers) || [];
+  const isBlocked = user
+    ? blockedList.some((b: { blockedId: string }) => b.blockedId === user._id)
+    : false;
+
+  const isBlockedByProfile = useQuery(
+    api.blocks.isBlockedBy,
+    currentUser && user
+      ? { blockerId: user._id, blockedId: currentUser._id }
+      : "skip"
+  );
+
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -83,7 +111,10 @@ export default function UserPage() {
         toast.error("User not found.");
         return;
       }
-
+      if (isBlockedByProfile) {
+        toast.error("This user is not available.");
+        return;
+      }
       if (isFollowing === true) {
         await unfollowUserMutation({ targetUserId: user._id });
         toast.success(
@@ -94,11 +125,27 @@ export default function UserPage() {
         toast.success(
           `You are now following ${user.firstName} ${user.lastName || ""}!`
         );
-        if (audioRef.current) {
-          audioRef.current
-            .play()
-            .catch((err) => console.error("Audio playback failed:", err));
-        }
+        playAudio();
+      }
+    } catch (error) {
+      toast.error(
+        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  };
+
+  const handleToggleBlock = async () => {
+    if (!currentUser) {
+      toast.error("You must be logged in to block a user.");
+      return;
+    }
+    try {
+      if (!isBlocked) {
+        await blockUserMutation({ targetUserId: user!._id });
+        toast.success(`Blocked ${user!.firstName || user!.email}`);
+      } else {
+        await unblockUserMutation({ targetUserId: user!._id });
+        toast.success(`Unblocked ${user!.firstName || user!.email}`);
       }
     } catch (error) {
       toast.error(
@@ -347,7 +394,7 @@ export default function UserPage() {
             </div>
           </div>
           <div className="mt-5 px-5">
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+            <div className="flex flex-col justify-between gap-4 md:flex-row sm:items-start">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">
                   {user ? (
@@ -358,14 +405,10 @@ export default function UserPage() {
                     <Skeleton className="h-10 w-64 mt-1" />
                   )}
                 </h1>
-                {user ? (
-                  isOwner && (
-                    <p className="mt-2 text-base sm:text-lg text-muted-foreground">
-                      {user.jobTitle || "Add your job title here!"}
-                    </p>
-                  )
-                ) : (
-                  <Skeleton className="mt-2 h-6 w-48" />
+                {user && isOwner && (
+                  <p className="mt-2 text-base sm:text-lg text-muted-foreground">
+                    {user.jobTitle || "Add your job title here!"}
+                  </p>
                 )}
               </div>
               {user ? (
@@ -407,20 +450,37 @@ export default function UserPage() {
                       <Edit className="h-4 w-4" /> Edit Profile
                     </Button>
                   </EditProfileDialog>
-                ) : typeof isFollowing === "undefined" ? (
-                  <Skeleton className="h-10 w-[140px]" />
-                ) : (
-                  <Button
-                    className="gap-1 px-4 py-3 sm:py-4 shadow-none"
-                    onClick={handleToggleFollow}
-                  >
-                    {isFollowing
-                      ? "Unfollow"
-                      : isFollowedBy
-                        ? "Follow Back"
-                        : "Follow"}
-                  </Button>
-                )
+                ) : currentUser && currentUser._id !== user._id ? (
+                  <div className="flex items-center">
+                    {isBlockedByProfile ? (
+                      <p className="text-xs text-muted-foreground">
+                        User not available
+                      </p>
+                    ) : isBlocked ? (
+                      <p className="text-xs text-muted-foreground">
+                        You have blocked this user
+                      </p>
+                    ) : (
+                      <Button
+                        className="gap-1 px-4 py-3 sm:py-4 shadow-none"
+                        onClick={handleToggleFollow}
+                      >
+                        {isFollowing
+                          ? "Unfollow"
+                          : isFollowedBy
+                            ? "Follow Back"
+                            : "Follow"}
+                      </Button>
+                    )}
+                    <Button
+                      variant="destructive"
+                      className="ml-2 gap-1 px-4 py-3 sm:py-4 shadow-none"
+                      onClick={handleToggleBlock}
+                    >
+                      {isBlocked ? "Unblock" : "Block"}
+                    </Button>
+                  </div>
+                ) : null
               ) : (
                 <Skeleton className="h-10 w-[140px]" />
               )}
@@ -509,7 +569,7 @@ export default function UserPage() {
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                        d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.576-7.499-1.632Z"
                       />
                     </svg>
                   </div>
@@ -559,7 +619,13 @@ export default function UserPage() {
               <Skeleton className="h-6 w-80 border" />
             )}
           </h2>
-          {userPosts ? (
+          {isBlocked || isBlockedByProfile ? (
+            <p className="text-muted-foreground text-sm">
+              {isBlocked
+                ? "You have blocked this user, Their posts are hidden, Unblock to see their posts."
+                : "This user's posts are not available."}
+            </p>
+          ) : userPosts ? (
             userPosts.length > 0 ? (
               userPosts.map((post) => (
                 <Post

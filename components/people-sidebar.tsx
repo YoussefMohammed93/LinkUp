@@ -116,6 +116,7 @@ function SuggestedUser({ user, currentUser, isLast }: SuggestedUserProps) {
         }
       : "skip"
   );
+
   const isFollowedBy = useQuery(
     api.follows.isFollowedBy,
     currentUser
@@ -169,19 +170,33 @@ export default function PeopleSidebar() {
     currentUserData ? { userId: currentUserData._id as Id<"users"> } : "skip"
   );
 
+  const blockRecords = useQuery(api.blocks.getUserBlockRecords) || [];
+  const blockedIds = new Set<string>();
+
+  if (currentUserData) {
+    blockRecords.forEach((b: { blockerId: string; blockedId: string }) => {
+      if (b.blockerId === currentUserData._id) {
+        blockedIds.add(b.blockedId);
+      } else {
+        blockedIds.add(b.blockerId);
+      }
+    });
+  }
+
   const sidebarLoading =
     recentUsersData === undefined ||
     currentUserData === undefined ||
     (currentUserData && followingList === undefined);
 
   const recentUsers = recentUsersData || [];
-
   const followingIds = new Set((followingList || []).map((u) => u?._id));
+
   const suggestedUsers = recentUsers
     .filter(
       (user) =>
         user.clerkUserId !== currentUserData?.clerkUserId &&
-        !followingIds.has(user._id)
+        !followingIds.has(user._id) &&
+        !blockedIds.has(user._id)
     )
     .slice(0, 3);
 
