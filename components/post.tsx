@@ -1,7 +1,8 @@
+"use client";
+
 import {
   Heart,
   MessageSquare,
-  Share2,
   Bookmark,
   Trash,
   MoreHorizontal,
@@ -36,22 +37,13 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import React, { useState } from "react";
+import ShareDialog from "./share-dialog";
 import { Skeleton } from "./ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import { useQuery, useMutation } from "convex/react";
 import OnlineStatusIndicator from "./online-status-indicator";
-
-export type PostDocument = {
-  _id: Id<"posts">;
-  content: string;
-  authorId: string;
-  authorName: string;
-  authorImage: string;
-  createdAt: number;
-  images?: string[];
-};
 
 export interface PostProps {
   post: {
@@ -64,6 +56,7 @@ export interface PostProps {
     images: string[];
     createdAt: number;
     authorImageUrl?: string;
+    sharedPostId?: Id<"posts">;
     visibility: "public" | "friends-only";
   };
   currentUserId?: Id<"users">;
@@ -71,8 +64,21 @@ export interface PostProps {
 }
 
 export function Post({ post, onDelete }: PostProps) {
-  const { _id, authorId, authorName, authorImage, content, createdAt, images } =
-    post;
+  const {
+    _id,
+    authorId,
+    authorName,
+    authorImage,
+    content,
+    createdAt,
+    images,
+    sharedPostId,
+  } = post;
+
+  const sharedPost = useQuery(
+    api.posts.getPostById,
+    sharedPostId ? { postId: sharedPostId } : "skip"
+  );
 
   const authorUser = useQuery(api.users.getUserById, { id: authorId });
 
@@ -93,7 +99,6 @@ export function Post({ post, onDelete }: PostProps) {
       ? { followerId: authorId, followingId: currentUser._id }
       : "skip"
   );
-
   const isFriends = currentUser && isFollowing && isFollowedBy;
 
   const [openDialog, setOpenDialog] = useState(false);
@@ -105,12 +110,13 @@ export function Post({ post, onDelete }: PostProps) {
   const likeCount = useQuery(api.likes.countLikes, { postId: _id });
   const isLikesLoading = hasLiked === undefined || likeCount === undefined;
 
-  const deletePostMutation = useMutation(api.posts.deletePost);
-  const unfollowUserMutation = useMutation(api.follows.unfollowUser);
-
   const addBookmarkMutation = useMutation(api.bookmarks.addBookmark);
   const removeBookmarkMutation = useMutation(api.bookmarks.removeBookmark);
   const hasBookmarked = useQuery(api.bookmarks.hasBookmarked, { postId: _id });
+
+  const unfollowUserMutation = useMutation(api.follows.unfollowUser);
+
+  const deletePostMutation = useMutation(api.posts.deletePost);
 
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     month: "short",
@@ -119,8 +125,10 @@ export function Post({ post, onDelete }: PostProps) {
     minute: "2-digit",
   });
 
+  const isShared = !!sharedPostId;
+
   const shouldAddMargin =
-    content.trim().length > 0 && images && images.length > 0;
+    content.trim().length > 0 && (images?.length > 0 || isShared);
 
   const handleLike = async () => {
     try {
@@ -141,8 +149,6 @@ export function Post({ post, onDelete }: PostProps) {
       toast.error("Failed to unlike post");
     }
   };
-
-  const formatLikes = (count: number) => `${count} like${count > 1 ? "s" : ""}`;
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -194,6 +200,8 @@ export function Post({ post, onDelete }: PostProps) {
     }
   };
 
+  const formatLikes = (count: number) => `${count} like${count > 1 ? "s" : ""}`;
+
   return (
     <>
       <Card className="relative rounded-lg border shadow-none bg-card dark:bg-[#252728] text-card-foreground">
@@ -215,19 +223,20 @@ export function Post({ post, onDelete }: PostProps) {
                 )}
               </div>
             </Link>
-            <div className="ml-4">
+            <div className="ml-3">
               <Link href={`/users/${authorId}`}>
                 <div className="font-semibold text-foreground cursor-pointer hover:underline">
                   {authorName}
                 </div>
               </Link>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                {formattedDate}
+                <span aria-hidden="true">·</span>
                 {post.visibility === "public" ? (
                   <Globe className="size-3" />
                 ) : (
                   <Users className="size-3" />
                 )}
-                {formattedDate}
               </div>
             </div>
           </div>
@@ -257,6 +266,7 @@ export function Post({ post, onDelete }: PostProps) {
                   <span>Delete post</span>
                 </DropdownMenuItem>
               )}
+
               <DropdownMenuItem
                 onSelect={handleToggleBookmark}
                 className="p-2.5 dark:hover:bg-secondary"
@@ -264,12 +274,13 @@ export function Post({ post, onDelete }: PostProps) {
               >
                 <Bookmark
                   aria-hidden="true"
-                  className={`${hasBookmarked ? "fill-primary text-primary" : ""}`}
+                  className={hasBookmarked ? "fill-primary text-primary" : ""}
                 />
                 <span>
                   {hasBookmarked ? "Remove from Bookmarks" : "Add to Bookmarks"}
                 </span>
               </DropdownMenuItem>
+
               {currentUser?._id !== authorId && (
                 <>
                   <DropdownMenuItem
@@ -325,69 +336,129 @@ export function Post({ post, onDelete }: PostProps) {
               {content}
             </p>
           )}
+          {sharedPostId && !sharedPost && (
+            <div className="p-3 border rounded-md bg-card dark:bg-[#252728]">
+              <div className="flex items-center gap-2">
+                <Skeleton className="w-10 h-10 dark:bg-card/50 rounded-full" />
+                <div className="flex flex-col gap-1">
+                  <Skeleton className="w-24 h-4 dark:bg-card/50" />
+                  <Skeleton className="w-16 h-3 dark:bg-card/50" />
+                </div>
+              </div>
+              <Skeleton className="w-full h-5 mt-3 dark:bg-card/50" />
+              <Skeleton className="w-full h-5 mt-1 dark:bg-card/50" />
+              <Skeleton className="w-full h-5 mt-1 dark:bg-card/50" />
+              <div className="mt-2">
+                <Skeleton className="w-full h-[80px] dark:bg-card/50 rounded-md" />
+              </div>
+            </div>
+          )}
+          {sharedPostId && sharedPost && (
+            <div className="p-3 border rounded-md bg-card dark:bg-[#252728]">
+              <div>
+                <Link href={`/users/${sharedPost.authorId}`}>
+                  <div className="flex items-center gap-2 cursor-pointer">
+                    <Image
+                      src={
+                        sharedPost.authorImageUrl || "/avatar-placeholder.png"
+                      }
+                      alt={sharedPost.authorName}
+                      width={40}
+                      height={40}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                    <div className="flex flex-col">
+                      <p className="font-semibold text-foreground">
+                        {sharedPost.authorName}
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(sharedPost.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          className="text-muted-foreground"
+                        >
+                          ·
+                        </span>
+                        {sharedPost.visibility === "public" ? (
+                          <Globe
+                            className="size-3 text-muted-foreground
+                          "
+                          />
+                        ) : (
+                          <Users
+                            className="size-3 text-muted-foreground
+                          "
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+              <p className="text-sm text-foreground mb-2 mt-3">
+                {sharedPost.content}
+              </p>
+              {sharedPost.images && sharedPost.images.length > 0 && (
+                <>
+                  {sharedPost.images.length === 1 ? (
+                    <div className="relative w-full h-[300px] sm:h-[400px]">
+                      <Image
+                        src={sharedPost.images[0]}
+                        alt="Original Post Image"
+                        fill
+                        className="object-cover rounded-lg"
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-2 grid grid-cols-2 gap-3">
+                      {sharedPost.images.map((image, index) => (
+                        <div key={index} className="relative aspect-[4/3]">
+                          <Image
+                            src={image}
+                            alt={`Original Post Image ${index + 1}`}
+                            fill
+                            className="object-cover rounded-lg"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
           {images && images.length > 0 && (
             <>
-              {images.length === 1 && (
-                <Image
-                  src={images[0]}
-                  alt="Post image"
-                  width={1000}
-                  height={1000}
-                  className="w-full h-[300px] sm:h-[400px] rounded-lg object-cover"
-                />
-              )}
-              {images.length === 2 && (
-                <div className="grid grid-cols-2 gap-2">
-                  {images.map((image, index) => (
-                    <Image
-                      key={index}
-                      src={image}
-                      alt={`Post image ${index + 1}`}
-                      width={1000}
-                      height={1000}
-                      className="w-full h-full rounded-lg object-cover"
-                    />
-                  ))}
-                </div>
-              )}
-              {images.length === 3 && (
-                <div className="grid grid-cols-2 gap-2">
+              {images.length === 1 ? (
+                <div className="relative w-full h-[300px] sm:h-[400px]">
                   <Image
                     src={images[0]}
-                    alt="Post image 1"
-                    width={1000}
-                    height={1000}
-                    className="row-span-2 rounded-lg object-cover"
+                    alt="Post image"
+                    fill
+                    className="object-cover rounded-lg"
                   />
-                  <div className="flex flex-col gap-2">
-                    <Image
-                      src={images[1]}
-                      alt="Post image 2"
-                      width={1000}
-                      height={1000}
-                      className="rounded-lg object-cover flex-1"
-                    />
-                    <Image
-                      src={images[2]}
-                      alt="Post image 3"
-                      width={1000}
-                      height={1000}
-                      className="rounded-lg object-cover flex-1"
-                    />
-                  </div>
                 </div>
-              )}
-              {images.length >= 4 && (
-                <div className="grid grid-cols-2 gap-2">
-                  {images.slice(0, 4).map((image, index) => (
-                    <Image
-                      key={index}
-                      src={image}
-                      alt={`Post image ${index + 1}`}
-                      width={1000}
-                      height={1000}
-                      className="w-full h-full rounded-lg object-cover"
-                    />
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {images.map((image, index) => (
+                    <div key={index} className="relative aspect-[4/3]">
+                      <Image
+                        src={image}
+                        alt={`Post image ${index + 1}`}
+                        fill
+                        className="object-cover rounded-lg"
+                      />
+                    </div>
                   ))}
                 </div>
               )}
@@ -403,14 +474,13 @@ export function Post({ post, onDelete }: PostProps) {
               disabled={isLikesLoading}
             >
               {isLikesLoading ? (
-                <>
-                  <Skeleton className="h-5 w-6 rounded-full dark:bg-card border" />
-                  <Skeleton className="h-5 w-8 dark:bg-card border rounded-full" />
-                </>
+                <Skeleton className="h-6 w-[59px] bg-secondary dark:bg-card rounded-sm" />
               ) : (
                 <>
                   <Heart
-                    className={`size-5 ${hasLiked ? "fill-red-500 text-red-500" : ""}`}
+                    className={`size-5 ${
+                      hasLiked ? "fill-red-500 text-red-500" : ""
+                    }`}
                   />
                   <span>{formatLikes(likeCount || 0)}</span>
                 </>
@@ -426,13 +496,9 @@ export function Post({ post, onDelete }: PostProps) {
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
-            >
-              <Share2 className="size-5" />
-            </Button>
+            {post.visibility === "public" && (
+              <ShareDialog originalPostId={_id} />
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -440,7 +506,9 @@ export function Post({ post, onDelete }: PostProps) {
               className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
               <Bookmark
-                className={`size-5 ${hasBookmarked ? "fill-primary text-primary" : ""}`}
+                className={`size-5 ${
+                  hasBookmarked ? "fill-primary text-primary" : ""
+                }`}
               />
             </Button>
           </div>

@@ -139,6 +139,7 @@ export const getFeedPosts = query({
   args: { currentUserId: v.optional(v.id("users")) },
   async handler(ctx, { currentUserId }) {
     let currentUser = await getCurrentUser(ctx);
+
     if (!currentUser && currentUserId) {
       currentUser = await ctx.db.get(currentUserId);
     }
@@ -202,5 +203,42 @@ export const getFeedPosts = query({
     const allPosts = [...ownPosts, ...publicPosts, ...feedFriendPosts];
 
     return allPosts.sort((a, b) => b.createdAt - a.createdAt);
+  },
+});
+
+// Mutation: Share a post
+export const sharePost = mutation({
+  args: {
+    postId: v.id("posts"),
+    content: v.string(),
+    visibility: v.union(v.literal("public"), v.literal("friends-only")),
+  },
+  handler: async (ctx, { postId, content, visibility }) => {
+    const user = await getCurrentUser(ctx);
+
+    if (!user) {
+      throw new Error("Unauthorized: User not found.");
+    }
+
+    const originalPost = await ctx.db.get(postId);
+
+    if (!originalPost) {
+      throw new Error("Cannot share a post that doesn't exist.");
+    }
+
+    const realOriginalPostId = originalPost.sharedPostId
+      ? originalPost.sharedPostId
+      : postId;
+
+    await ctx.db.insert("posts", {
+      content,
+      authorId: user._id,
+      authorName: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+      authorImageUrl: user.imageUrl,
+      images: [],
+      createdAt: Date.now(),
+      visibility,
+      sharedPostId: realOriginalPostId,
+    });
   },
 });

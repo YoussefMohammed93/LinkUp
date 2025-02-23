@@ -189,7 +189,7 @@ export default function PeopleSidebar() {
 
   if (sidebarLoading) {
     return (
-      <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none space-y-5 lg:block xl:w-[320px]">
+      <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none lg:block xl:w-[320px]">
         <div className="space-y-5 rounded-lg border bg-card p-4">
           <h2 className="text-xl font-semibold">Suggested Friends</h2>
           <div className="flex flex-col gap-5">
@@ -212,7 +212,7 @@ export default function PeopleSidebar() {
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-1 pl-1 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1 mt-2 pl-1 text-xs text-muted-foreground">
           <Image
             src="/favicon.ico"
             alt="logo"
@@ -227,7 +227,7 @@ export default function PeopleSidebar() {
   }
 
   return (
-    <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none space-y-5 lg:block xl:w-[320px]">
+    <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none lg:block xl:w-[320px]">
       <div className="space-y-5 rounded-lg border bg-card p-4">
         <h2 className="text-xl font-semibold">Suggested Friends</h2>
         <div className="flex flex-col gap-5">
@@ -247,7 +247,7 @@ export default function PeopleSidebar() {
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1 pl-1 text-xs text-muted-foreground">
+      <div className="flex items-center gap-1 mt-2 pl-1 text-xs text-muted-foreground">
         <Image src="/favicon.ico" alt="logo" priority width={22} height={22} />
         {`LinkUp Corporation © ${currentYear}`}
       </div>

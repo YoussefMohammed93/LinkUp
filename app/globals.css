@@ -18,10 +18,10 @@ body {
   background: white;
 }
 ::-webkit-scrollbar-thumb {
-  background: #0a5cff;
+  background: #0a78ff;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #084fde;
+  background: #0964d4;
 }
 
 @layer base {
@@ -60,7 +60,7 @@ body {
     --card-foreground: 0 0% 95%;
     --popover: 0 0% 9%;
     --popover-foreground: 0 0% 95%;
-    --primary: 220 100% 52%;
+    --primary: 209 100% 52%;
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
