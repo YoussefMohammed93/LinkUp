@@ -55,4 +55,13 @@ export default defineSchema({
   })
     .index("byBlocker", ["blockerId"])
     .index("byBlocked", ["blockedId"]),
+
+  reports: defineTable({
+    postId: v.id("posts"),
+    reporterId: v.id("users"),
+    reason: v.string(),
+    createdAt: v.number(),
+  })
+    .index("byPost", ["postId"])
+    .index("byReporter", ["reporterId"]),
 });

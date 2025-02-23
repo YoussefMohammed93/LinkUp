@@ -40,6 +40,7 @@ import {
 import React, { useState } from "react";
 import ShareDialog from "./share-dialog";
 import { Skeleton } from "./ui/skeleton";
+import ReportDialog from "./report-dialog";
 import ZoomableImage from "./zoomable-image";
 import { api } from "@/convex/_generated/api";
 import ExpandableText from "./expandable-text";
@@ -50,20 +51,21 @@ import OnlineStatusIndicator from "./online-status-indicator";
 
 export interface PostProps {
   post: {
-    _id: Id<"posts">;
-    _creationTime: number;
-    content: string;
     authorId: Id<"users">;
     authorName: string;
     authorImage: string;
-    images: string[];
     createdAt: number;
+    images: string[];
+    _id: Id<"posts">;
+    _creationTime: number;
     authorImageUrl?: string;
     sharedPostId?: Id<"posts">;
+    content: string;
     visibility: "public" | "friends-only";
   };
   currentUserId?: Id<"users">;
   onDelete: (postId: Id<"posts">) => Promise<void>;
+  onReport?: (postId: Id<"posts">) => void;
 }
 
 export function Post({ post, onDelete }: PostProps) {
@@ -110,6 +112,8 @@ export function Post({ post, onDelete }: PostProps) {
 
   const [isBlocking, setIsBlocking] = useState(false);
   const [openBlockDialog, setOpenBlockDialog] = useState(false);
+
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   const likePostMutation = useMutation(api.likes.likePost);
   const unlikePostMutation = useMutation(api.likes.unlikePost);
@@ -409,7 +413,7 @@ export function Post({ post, onDelete }: PostProps) {
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onSelect={() => {}}
+                    onSelect={() => setReportDialogOpen(true)}
                     className="p-2.5 dark:hover:bg-secondary"
                     role="menuitem"
                   >
@@ -632,7 +636,7 @@ export function Post({ post, onDelete }: PostProps) {
             <DialogTitle>Confirm {isBlocked ? "Unblock" : "Block"}</DialogTitle>
             <DialogDescription className="pt-5">
               Are you sure you want to {isBlocked ? "unblock" : "block"}{" "}
-              {authorName}? {" "}
+              {authorName}?{" "}
               {isBlocked
                 ? "They will be able to see and contact you."
                 : "They will no longer be able to interact with you."}
@@ -663,6 +667,12 @@ export function Post({ post, onDelete }: PostProps) {
           </div>
         </DialogContent>
       </Dialog>
+      <ReportDialog
+        postId={post._id}
+        authorId={post.authorId}
+        isOpen={reportDialogOpen}
+        onClose={() => setReportDialogOpen(false)}
+      />
     </>
   );
 }
