@@ -10,17 +10,17 @@ export default defineSchema({
     lastName: v.optional(v.string()),
     jobTitle: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
-    coverImageUrl: v.optional(v.union(v.string(), v.null())),
     lastActiveAt: v.optional(v.number()),
+    coverImageUrl: v.optional(v.union(v.string(), v.null())),
   }).index("byClerkUserId", ["clerkUserId"]),
 
   posts: defineTable({
     content: v.string(),
     authorId: v.id("users"),
     authorName: v.string(),
+    createdAt: v.number(),
     authorImageUrl: v.optional(v.string()),
     images: v.optional(v.array(v.string())),
-    createdAt: v.number(),
     sharedPostId: v.optional(v.id("posts")),
     visibility: v.union(v.literal("public"), v.literal("friends-only")),
   })
@@ -37,6 +37,15 @@ export default defineSchema({
   likes: defineTable({
     postId: v.id("posts"),
     userId: v.id("users"),
+    reaction: v.union(
+      v.literal("like"),
+      v.literal("love"),
+      v.literal("care"),
+      v.literal("haha"),
+      v.literal("wow"),
+      v.literal("sad"),
+      v.literal("angry")
+    ),
     createdAt: v.number(),
   }).index("byPost", ["postId"]),
 

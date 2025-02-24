@@ -16,6 +16,7 @@ import { useQuery } from "convex/react";
 import { Skeleton } from "./ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
+import OnlineStatusIndicator from "./online-status-indicator";
 
 interface MenuBarProps {
   className?: string;
@@ -49,27 +50,35 @@ export default function MenuBar({ className }: MenuBarProps) {
           />
         )}
         <div className="absolute -bottom-8 xl:-bottom-12 left-4">
-          <div className="size-16 xl:size-20 rounded-full border-[3px] border-card bg-secondary flex items-center justify-center">
+          <div className="relative size-16 xl:size-20 rounded-full border-[3px] border-card bg-secondary flex items-center justify-center">
             {currentUser === undefined ? (
               <Loader className="animate-spin text-muted-foreground size-5" />
-            ) : currentUser?.imageUrl ? (
-              <Image
-                src={currentUser.imageUrl}
-                alt="Profile"
-                width={100}
-                height={100}
-                className="w-full h-full rounded-full object-cover"
-                onLoad={() => setAvatarLoading(false)}
-                style={{
-                  opacity: avatarLoading ? 0 : 1,
-                  transition: "opacity 0.5s ease-in-out",
-                }}
-              />
             ) : (
-              <span className="text-xl font-semibold text-muted-foreground">
-                {currentUser?.firstName?.[0]}
-                {currentUser?.lastName?.[0]}
-              </span>
+              <>
+                {currentUser?.imageUrl ? (
+                  <Image
+                    src={currentUser.imageUrl}
+                    alt="Profile"
+                    width={100}
+                    height={100}
+                    className="w-full h-full rounded-full object-cover"
+                    onLoad={() => setAvatarLoading(false)}
+                    style={{
+                      opacity: avatarLoading ? 0 : 1,
+                      transition: "opacity 0.5s ease-in-out",
+                    }}
+                  />
+                ) : (
+                  <span className="text-xl font-semibold text-muted-foreground">
+                    {currentUser?.firstName?.[0]}
+                    {currentUser?.lastName?.[0]}
+                  </span>
+                )}
+                <OnlineStatusIndicator
+                  className="w-[15px] h-[15px] right-1.5 border-card"
+                  lastActiveAt={currentUser?.lastActiveAt}
+                />
+              </>
             )}
           </div>
         </div>

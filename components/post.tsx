@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Heart,
   MessageSquare,
   Bookmark,
   Trash,
@@ -38,7 +37,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import React, { useState } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useTheme } from "next-themes";
 import ShareDialog from "./share-dialog";
 import { Skeleton } from "./ui/skeleton";
 import ReportDialog from "./report-dialog";
@@ -47,8 +52,10 @@ import { api } from "@/convex/_generated/api";
 import ExpandableText from "./expandable-text";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
+import React, { JSX, useRef, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import OnlineStatusIndicator from "./online-status-indicator";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 
 export interface PostProps {
   post: {
@@ -67,6 +74,14 @@ export interface PostProps {
   currentUserId?: Id<"users">;
   onDelete: (postId: Id<"posts">) => Promise<void>;
   onReport?: (postId: Id<"posts">) => void;
+}
+
+interface Reaction {
+  userId: string;
+  reaction: "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry";
+  createdAt: number;
+  firstName?: string;
+  lastName?: string;
 }
 
 export function Post({ post, onDelete }: PostProps) {
@@ -106,10 +121,49 @@ export function Post({ post, onDelete }: PostProps) {
       : "skip"
   );
 
+  const reactions = useQuery(api.likes.getLikes, { postId: _id }) as
+    | Reaction[]
+    | undefined;
+
+  const currentReaction = useQuery(api.likes.getReaction, { postId: _id });
+  const reactToPostMutation = useMutation(api.likes.reactToPost);
+
+  const reactionIcons: Record<
+    "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry",
+    JSX.Element
+  > = {
+    like: <Image src="/like.svg" alt="like" width={16} height={16} />,
+    love: <Image src="/love.svg" alt="love" width={16} height={16} />,
+    care: <Image src="/care.svg" alt="care" width={16} height={16} />,
+    haha: <Image src="/haha.svg" alt="haha" width={16} height={16} />,
+    wow: <Image src="/wow.svg" alt="wow" width={16} height={16} />,
+    sad: <Image src="/sad.svg" alt="sad" width={16} height={16} />,
+    angry: <Image src="/angry.svg" alt="angry" width={16} height={16} />,
+  };
+
+  const hoverReactionIcons: Record<
+    "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry",
+    JSX.Element
+  > = {
+    like: <Image src="/like.svg" alt="like" width={32} height={32} />,
+    love: <Image src="/love.svg" alt="love" width={32} height={32} />,
+    care: <Image src="/care.svg" alt="care" width={32} height={32} />,
+    haha: <Image src="/haha.svg" alt="haha" width={32} height={32} />,
+    wow: <Image src="/wow.svg" alt="wow" width={32} height={32} />,
+    sad: <Image src="/sad.svg" alt="sad" width={32} height={32} />,
+    angry: <Image src="/angry.svg" alt="angry" width={32} height={32} />,
+  };
+
   const isFriends = currentUser && isFollowing && isFollowedBy;
+
+  const { theme } = useTheme();
 
   const [openDialog, setOpenDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [hoverOpen, setHoverOpen] = useState(false);
+  const openTimeoutRef = useRef<number | null>(null);
+  const closeTimeoutRef = useRef<number | null>(null);
 
   const [isBlocking, setIsBlocking] = useState(false);
   const [openBlockDialog, setOpenBlockDialog] = useState(false);
@@ -117,12 +171,6 @@ export function Post({ post, onDelete }: PostProps) {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   const [isCommentsDialogOpen, setIsCommentsDialogOpen] = useState(false);
-
-  const likePostMutation = useMutation(api.likes.likePost);
-  const unlikePostMutation = useMutation(api.likes.unlikePost);
-  const hasLiked = useQuery(api.likes.hasLiked, { postId: _id });
-  const likeCount = useQuery(api.likes.countLikes, { postId: _id });
-  const isLikesLoading = hasLiked === undefined || likeCount === undefined;
 
   const addBookmarkMutation = useMutation(api.bookmarks.addBookmark);
   const removeBookmarkMutation = useMutation(api.bookmarks.removeBookmark);
@@ -151,6 +199,28 @@ export function Post({ post, onDelete }: PostProps) {
   const shouldAddMargin =
     content.trim().length > 0 && (images?.length > 0 || isShared);
 
+  const handleDefaultClick = async () => {
+    try {
+      await reactToPostMutation({
+        postId: _id,
+        reaction: currentReaction || "like",
+      });
+    } catch (error) {
+      console.error("Error reacting to post:", error);
+    }
+  };
+
+  const handleReact = async (
+    reaction: "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry"
+  ) => {
+    try {
+      await reactToPostMutation({ postId: _id, reaction });
+      setHoverOpen(false);
+    } catch (error) {
+      console.error("Error reacting to post:", error);
+    }
+  };
+
   const handleFollow = async () => {
     if (!currentUser) {
       toast.error("You must be logged in to follow a user.");
@@ -178,26 +248,6 @@ export function Post({ post, onDelete }: PostProps) {
       toast.error(
         `Error: ${error instanceof Error ? error.message : "Unknown error"}`
       );
-    }
-  };
-
-  const handleLike = async () => {
-    try {
-      await likePostMutation({ postId: _id });
-      toast.success("Post liked!");
-    } catch (error) {
-      console.error("Error liking post:", error);
-      toast.error("Failed to like post");
-    }
-  };
-
-  const handleUnlike = async () => {
-    try {
-      await unlikePostMutation({ postId: _id });
-      toast.success("Post unliked!");
-    } catch (error) {
-      console.error("Error unliking post:", error);
-      toast.error("Failed to unlike post");
     }
   };
 
@@ -267,8 +317,6 @@ export function Post({ post, onDelete }: PostProps) {
       setOpenBlockDialog(false);
     }
   };
-
-  const formatLikes = (count: number) => `${count} like${count > 1 ? "s" : ""}`;
 
   return (
     <>
@@ -551,27 +599,215 @@ export function Post({ post, onDelete }: PostProps) {
             </>
           )}
         </CardContent>
+        <div className="p-4 py-0">
+          {reactions === undefined ? (
+            <div className="flex items-center gap-2 pb-2.5">
+              <Skeleton className="w-14 h-4 rounded-md dark:bg-card/50" />
+            </div>
+          ) : reactions && reactions.length > 0 ? (
+            <div className="flex items-center gap-2">
+              <div className="flex pt-1.5 pb-2">
+                {(() => {
+                  const counts = reactions.reduce<Record<string, number>>(
+                    (acc, curr) => {
+                      const type = curr.reaction;
+                      acc[type] = (acc[type] || 0) + 1;
+                      return acc;
+                    },
+                    {}
+                  );
+                  const topThree = Object.entries(counts)
+                    .sort(([, countA], [, countB]) => countB - countA)
+                    .slice(0, 3);
+                  return topThree.map(([reactionType]) => (
+                    <div key={reactionType} className="w-4 h-4">
+                      {
+                        reactionIcons[
+                          reactionType as
+                            | "like"
+                            | "love"
+                            | "care"
+                            | "haha"
+                            | "wow"
+                            | "sad"
+                            | "angry"
+                        ]
+                      }
+                    </div>
+                  ));
+                })()}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {reactions.length}
+              </div>
+            </div>
+          ) : (
+            ""
+          )}
+        </div>
+
         <CardFooter className="flex items-center justify-between border-t border-border p-2.5">
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              onClick={hasLiked ? handleUnlike : handleLike}
-              className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
-              disabled={isLikesLoading}
-            >
-              {isLikesLoading ? (
-                <Skeleton className="h-6 w-[59px] bg-secondary dark:bg-card rounded-sm" />
-              ) : (
-                <>
-                  <Heart
-                    className={`size-5 ${
-                      hasLiked ? "fill-red-500 text-red-500" : ""
-                    }`}
-                  />
-                  <span>{formatLikes(likeCount || 0)}</span>
-                </>
-              )}
-            </Button>
+            <HoverCard open={hoverOpen} onOpenChange={setHoverOpen}>
+              <HoverCardTrigger asChild>
+                {reactions === undefined ? (
+                  <Skeleton className="w-14 h-7 rounded-md m-2 dark:bg-card/50" />
+                ) : (
+                  <Button
+                    variant="ghost"
+                    onClick={handleDefaultClick}
+                    className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
+                    onMouseEnter={() => {
+                      if (closeTimeoutRef.current) {
+                        clearTimeout(closeTimeoutRef.current);
+                        closeTimeoutRef.current = null;
+                      }
+                      openTimeoutRef.current = window.setTimeout(() => {
+                        setHoverOpen(true);
+                      }, 2000);
+                    }}
+                    onMouseLeave={() => {
+                      if (openTimeoutRef.current) {
+                        clearTimeout(openTimeoutRef.current);
+                        openTimeoutRef.current = null;
+                      }
+                      closeTimeoutRef.current = window.setTimeout(() => {
+                        setHoverOpen(false);
+                      }, 200);
+                    }}
+                  >
+                    {currentReaction ? (
+                      reactionIcons[currentReaction]
+                    ) : (
+                      <Image
+                        src={
+                          theme === "dark"
+                            ? "/like-transparent-dark.png"
+                            : "/like-transparent.png"
+                        }
+                        alt="like"
+                        width={18}
+                        height={18}
+                      />
+                    )}
+                    <span>
+                      {currentReaction
+                        ? currentReaction.charAt(0).toUpperCase() +
+                          currentReaction.slice(1)
+                        : "Like"}
+                    </span>
+                  </Button>
+                )}
+              </HoverCardTrigger>
+              <TooltipProvider>
+                <HoverCardContent
+                  className="flex gap-2 p-2 rounded-full"
+                  onMouseEnter={() => {
+                    if (closeTimeoutRef.current) {
+                      clearTimeout(closeTimeoutRef.current);
+                      closeTimeoutRef.current = null;
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    closeTimeoutRef.current = window.setTimeout(() => {
+                      setHoverOpen(false);
+                    }, 200);
+                  }}
+                >
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleReact("like")}
+                        className="p-1 hover:scale-[1.45] transition-transform duration-200"
+                      >
+                        {hoverReactionIcons.like}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Like</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleReact("love")}
+                        className="p-1 hover:scale-[1.45] transition-transform duration-200"
+                      >
+                        {hoverReactionIcons.love}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Love</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleReact("care")}
+                        className="p-1 hover:scale-[1.45] transition-transform duration-200"
+                      >
+                        {hoverReactionIcons.care}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Care</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleReact("haha")}
+                        className="p-1 hover:scale-[1.45] transition-transform duration-200"
+                      >
+                        {hoverReactionIcons.haha}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Haha</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleReact("wow")}
+                        className="p-1 hover:scale-[1.45] transition-transform duration-200"
+                      >
+                        {hoverReactionIcons.wow}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Wow</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleReact("sad")}
+                        className="p-1 hover:scale-[1.45] transition-transform duration-200"
+                      >
+                        {hoverReactionIcons.sad}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Sad</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleReact("angry")}
+                        className="p-1 hover:scale-[1.45] transition-transform duration-200"
+                      >
+                        {hoverReactionIcons.angry}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Angry</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </HoverCardContent>
+              </TooltipProvider>
+            </HoverCard>
             <Button
               variant="ghost"
               size="sm"
