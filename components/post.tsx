@@ -714,29 +714,102 @@ export function Post({ post, onDelete }: PostProps) {
                     </div>
                   </div>
                 </div>
-                <div className="border p-4 rounded-sm bg-background">
-                  <div className="text-start text-base">
-                    <ExpandableText text={content} />
-                  </div>
-                  {post.images && post.images.length > 0 && (
-                    <div
-                      className={`mt-3 grid grid-cols-1 gap-3 ${
-                        post.images.length === 1
-                          ? "sm:grid-cols-1"
-                          : "sm:grid-cols-2"
-                      }`}
-                    >
-                      {post.images.map((img, idx) => (
-                        <ZoomableImage
-                          key={idx}
-                          src={img}
-                          alt={`Post image ${idx + 1}`}
-                          className="relative w-full h-full aspect-[4/3] rounded-lg"
-                        />
-                      ))}
+                {sharedPostId && sharedPost ? (
+                  <div className="border p-4 rounded-sm bg-background">
+                    <div className="flex items-center">
+                      <Link href={`/users/${sharedPost.authorId}`}>
+                        <div className="relative">
+                          <Image
+                            src={
+                              sharedPost.authorImageUrl ||
+                              "/avatar-placeholder.png"
+                            }
+                            alt={sharedPost.authorName}
+                            width={100}
+                            height={100}
+                            className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                          />
+                        </div>
+                      </Link>
+                      <div className="ml-3">
+                        <Link href={`/users/${sharedPost.authorId}`}>
+                          <div className="font-semibold text-foreground cursor-pointer hover:underline">
+                            {sharedPost.authorName}
+                          </div>
+                        </Link>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <span>
+                            {new Date(sharedPost.createdAt).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </span>
+                          <span
+                            aria-hidden="true"
+                            className="text-muted-foreground"
+                          >
+                            ·
+                          </span>
+                          {sharedPost.visibility === "public" ? (
+                            <Globe className="size-3 text-muted-foreground" />
+                          ) : (
+                            <Users className="size-3 text-muted-foreground" />
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
+                    <div className="mt-3">
+                      <ExpandableText text={sharedPost.content} />
+                    </div>
+                    {sharedPost.images && sharedPost.images.length > 0 && (
+                      <div
+                        className={`mt-3 grid gap-3 ${
+                          sharedPost.images.length === 1
+                            ? "sm:grid-cols-1"
+                            : "sm:grid-cols-2"
+                        }`}
+                      >
+                        {sharedPost.images.map((img, idx) => (
+                          <ZoomableImage
+                            key={idx}
+                            src={img}
+                            alt={`Shared Post image ${idx + 1}`}
+                            className="relative w-full h-full aspect-[4/3] rounded-lg"
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="border p-4 rounded-sm bg-background">
+                    <div className="text-start text-base">
+                      <ExpandableText text={content} />
+                    </div>
+                    {post.images && post.images.length > 0 && (
+                      <div
+                        className={`mt-3 grid gap-3 ${
+                          post.images.length === 1
+                            ? "sm:grid-cols-1"
+                            : "sm:grid-cols-2"
+                        }`}
+                      >
+                        {post.images.map((img, idx) => (
+                          <ZoomableImage
+                            key={idx}
+                            src={img}
+                            alt={`Post image ${idx + 1}`}
+                            className="relative w-full h-full aspect-[4/3] rounded-lg"
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </DialogDescription>
           </DialogHeader>
