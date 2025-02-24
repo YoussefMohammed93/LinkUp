@@ -106,3 +106,12 @@ body {
 .focus-visible\:ring-1:focus-visible {
   box-shadow: none !important;
 }
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 100%;
+}

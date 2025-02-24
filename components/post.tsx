@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import Comments from "./comments";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -114,6 +115,8 @@ export function Post({ post, onDelete }: PostProps) {
   const [openBlockDialog, setOpenBlockDialog] = useState(false);
 
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+
+  const [isCommentsDialogOpen, setIsCommentsDialogOpen] = useState(false);
 
   const likePostMutation = useMutation(api.likes.likePost);
   const unlikePostMutation = useMutation(api.likes.unlikePost);
@@ -572,6 +575,7 @@ export function Post({ post, onDelete }: PostProps) {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setIsCommentsDialogOpen(true)}
               className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
               <MessageSquare className="size-5" />
@@ -664,6 +668,80 @@ export function Post({ post, onDelete }: PostProps) {
                 "Confirm"
               )}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={isCommentsDialogOpen}
+        onOpenChange={setIsCommentsDialogOpen}
+      >
+        <DialogContent className="p-3 sm:p-5 max-w-[100%] sm:max-w-[700px] max-h-[650px] overflow-auto custom-scrollbar">
+          <DialogHeader>
+            <DialogTitle>Post Details</DialogTitle>
+            <DialogDescription asChild>
+              <div>
+                <div className="flex items-center mt-3 mb-5">
+                  <Link href={`/users/${authorId}`}>
+                    <div className="relative">
+                      <Image
+                        src={authorImage}
+                        alt={authorName}
+                        width={100}
+                        height={100}
+                        className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                      />
+                      {(currentUser?._id === authorId || isFriends) && (
+                        <OnlineStatusIndicator
+                          lastActiveAt={authorUser?.lastActiveAt}
+                        />
+                      )}
+                    </div>
+                  </Link>
+                  <div className="ml-3">
+                    <Link href={`/users/${authorId}`}>
+                      <div className="font-semibold text-foreground cursor-pointer hover:underline">
+                        {authorName}
+                      </div>
+                    </Link>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      {formattedDate}
+                      <span aria-hidden="true">·</span>
+                      {post.visibility === "public" ? (
+                        <Globe className="size-3" />
+                      ) : (
+                        <Users className="size-3" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="border p-4 rounded-sm bg-background">
+                  <div className="text-start text-base">
+                    <ExpandableText text={content} />
+                  </div>
+                  {post.images && post.images.length > 0 && (
+                    <div
+                      className={`mt-3 grid grid-cols-1 gap-3 ${
+                        post.images.length === 1
+                          ? "sm:grid-cols-1"
+                          : "sm:grid-cols-2"
+                      }`}
+                    >
+                      {post.images.map((img, idx) => (
+                        <ZoomableImage
+                          key={idx}
+                          src={img}
+                          alt={`Post image ${idx + 1}`}
+                          className="relative w-full h-full aspect-[4/3] rounded-lg"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-1">
+            <Comments postId={post._id} postOwnerId={post.authorId} />
           </div>
         </DialogContent>
       </Dialog>

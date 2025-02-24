@@ -64,4 +64,13 @@ export default defineSchema({
   })
     .index("byPost", ["postId"])
     .index("byReporter", ["reporterId"]),
+
+  comments: defineTable({
+    content: v.string(),
+    authorId: v.id("users"),
+    postId: v.id("posts"),
+    createdAt: v.number(),
+  })
+    .index("byPost", ["postId"])
+    .index("byAuthor", ["authorId"]),
 });
