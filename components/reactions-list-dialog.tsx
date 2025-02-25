@@ -119,6 +119,7 @@ export default function ReactionListDialog({
                 key={type}
                 variant={currentTab === type ? "default" : "outline"}
                 size="sm"
+                className="shadow-none"
                 onClick={() => handleTabChange(type)}
               >
                 {reactionIcons[type]}

@@ -165,6 +165,7 @@ export function Post({ post, onDelete }: PostProps) {
   const [openDialog, setOpenDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [openReactionDialog, setOpenReactionDialog] = useState(false);
+  const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
 
   const [hoverOpen, setHoverOpen] = useState(false);
   const openTimeoutRef = useRef<number | null>(null);
@@ -272,6 +273,7 @@ export function Post({ post, onDelete }: PostProps) {
   };
 
   const handleToggleBookmark = async () => {
+    setIsBookmarkLoading(true);
     if (hasBookmarked) {
       try {
         await removeBookmarkMutation({ postId: _id });
@@ -289,6 +291,7 @@ export function Post({ post, onDelete }: PostProps) {
         toast.error("Failed to add bookmark");
       }
     }
+    setIsBookmarkLoading(false);
   };
 
   const handleBlockToggle = async () => {
@@ -350,7 +353,10 @@ export function Post({ post, onDelete }: PostProps) {
                   {authorName}
                 </div>
               </Link>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Link
+                href={`/posts/${post._id}`}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:underline"
+              >
                 {formattedDate}
                 <span aria-hidden="true">·</span>
                 {post.visibility === "public" ? (
@@ -358,7 +364,7 @@ export function Post({ post, onDelete }: PostProps) {
                 ) : (
                   <Users className="size-3" />
                 )}
-              </div>
+              </Link>
             </div>
           </div>
           <DropdownMenu>
@@ -502,11 +508,13 @@ export function Post({ post, onDelete }: PostProps) {
           </DropdownMenu>
         </CardHeader>
         <CardContent>
-          {content.trim().length > 0 && (
-            <div className={shouldAddMargin ? "mb-3" : ""}>
-              <ExpandableText text={content} />
-            </div>
-          )}
+          <Link href={`/posts/${post._id}`}>
+            {content.trim().length > 0 && (
+              <div className={shouldAddMargin ? "mb-3" : ""}>
+                <ExpandableText text={content} />
+              </div>
+            )}
+          </Link>
           {sharedPostId && !sharedPost && (
             <div className="p-3 border rounded-md bg-card dark:bg-[#252728]">
               <div className="flex items-center gap-2">
@@ -546,7 +554,10 @@ export function Post({ post, onDelete }: PostProps) {
                       {sharedPost.authorName}
                     </div>
                   </Link>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Link
+                    href={`/posts/${post._id}`}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:underline"
+                  >
                     <span>
                       {new Date(sharedPost.createdAt).toLocaleDateString(
                         "en-US",
@@ -566,12 +577,12 @@ export function Post({ post, onDelete }: PostProps) {
                     ) : (
                       <Users className="size-3 text-muted-foreground" />
                     )}
-                  </div>
+                  </Link>
                 </div>
               </div>
-              <div className="mt-3">
+              <Link href={`/posts/${post._id}`} className="mt-3">
                 <ExpandableText text={sharedPost.content} />
-              </div>
+              </Link>
               {sharedPost.images && sharedPost.images.length > 0 && (
                 <>
                   {sharedPost.images.length === 1 ? (
@@ -882,32 +893,34 @@ export function Post({ post, onDelete }: PostProps) {
             </div>
           )}
           <div className="sm:flex-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleToggleBookmark}
-              className="w-full flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className={`size-5 ${
-                  hasBookmarked ? "fill-primary text-primary" : ""
-                }`}
+            {isBookmarkLoading || hasBookmarked === undefined ? (
+              <Skeleton className="w-32 h-7 rounded-md m-2 dark:bg-card/50" />
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleBookmark}
+                className="w-full flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"
-                />
-              </svg>
-              <span className="text-sm hidden sm:block">
-                {hasBookmarked ? "Bookmarked" : "Bookmark"}
-              </span>
-            </Button>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className={`size-5 ${hasBookmarked ? "fill-primary text-primary" : ""}`}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"
+                  />
+                </svg>
+                <span className="text-sm hidden sm:block">
+                  {hasBookmarked ? "Bookmarked" : "Bookmark"}
+                </span>
+              </Button>
+            )}
           </div>
         </CardFooter>
       </Card>
