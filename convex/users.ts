@@ -105,7 +105,29 @@ export const updateUser = mutation({
     if (!user) throw new Error("User not found");
 
     await ctx.db.patch(user._id, updates);
-    return await userByClerkUserId(ctx, identity.subject);
+    const updatedUser = await userByClerkUserId(ctx, identity.subject);
+
+    if (!updatedUser) {
+      throw new Error("User not found after update");
+    }
+
+    if (updates.firstName !== undefined || updates.lastName !== undefined) {
+      const newAuthorName =
+        `${updatedUser.firstName || ""} ${updatedUser.lastName || ""}`.trim();
+
+      const userPosts = await ctx.db
+        .query("posts")
+        .withIndex("byAuthor", (q) => q.eq("authorId", user._id))
+        .collect();
+
+      await Promise.all(
+        userPosts.map((post) =>
+          ctx.db.patch(post._id, { authorName: newAuthorName })
+        )
+      );
+    }
+
+    return updatedUser;
   },
 });
 

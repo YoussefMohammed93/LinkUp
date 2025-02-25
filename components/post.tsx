@@ -647,7 +647,7 @@ export function Post({ post, onDelete }: PostProps) {
         </div>
 
         <CardFooter className="flex items-center justify-between border-t border-border p-2.5">
-          <div className="flex items-center gap-2">
+          <div className="sm:flex-1">
             <HoverCard open={hoverOpen} onOpenChange={setHoverOpen}>
               <HoverCardTrigger asChild>
                 {reactions === undefined ? (
@@ -656,7 +656,7 @@ export function Post({ post, onDelete }: PostProps) {
                   <Button
                     variant="ghost"
                     onClick={handleDefaultClick}
-                    className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
+                    className="w-full flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
                     onMouseEnter={() => {
                       if (closeTimeoutRef.current) {
                         clearTimeout(closeTimeoutRef.current);
@@ -690,7 +690,7 @@ export function Post({ post, onDelete }: PostProps) {
                         height={18}
                       />
                     )}
-                    <span>
+                    <span className="text-sm">
                       {currentReaction
                         ? currentReaction.charAt(0).toUpperCase() +
                           currentReaction.slice(1)
@@ -808,31 +808,38 @@ export function Post({ post, onDelete }: PostProps) {
                 </HoverCardContent>
               </TooltipProvider>
             </HoverCard>
+          </div>
+          <div className="sm:flex-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsCommentsDialogOpen(true)}
-              className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
+              className="w-full flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
               <MessageSquare className="size-5" />
-              Comment
+              <span className="text-sm">Comment</span>
             </Button>
           </div>
-          <div className="flex items-center gap-2">
-            {post.visibility === "public" && (
+          {post.visibility === "public" && (
+            <div className="sm:flex-1">
               <ShareDialog originalPostId={_id} />
-            )}
+            </div>
+          )}
+          <div className="sm:flex-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleToggleBookmark}
-              className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
+              className="w-full flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
               <Bookmark
                 className={`size-5 ${
                   hasBookmarked ? "fill-primary text-primary" : ""
                 }`}
               />
+              <span className="text-sm hidden sm:block">
+                {hasBookmarked ? "Bookmarked" : "Bookmark"}
+              </span>
             </Button>
           </div>
         </CardFooter>
@@ -911,7 +918,7 @@ export function Post({ post, onDelete }: PostProps) {
         open={isCommentsDialogOpen}
         onOpenChange={setIsCommentsDialogOpen}
       >
-        <DialogContent className="p-3 sm:p-5 max-w-[100%] sm:max-w-[700px] max-h-[650px] overflow-auto custom-scrollbar">
+        <DialogContent className="p-3 sm:p-5 max-w-[380px] sm:max-w-[700px] max-h-[650px] overflow-auto custom-scrollbar">
           <DialogHeader>
             <DialogTitle>Post Details</DialogTitle>
             <DialogDescription asChild>

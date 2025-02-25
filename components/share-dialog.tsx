@@ -109,9 +109,10 @@ export default function ShareDialog({
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
+            className="w-full flex items-center gap-2 px-3 py-1.5 dark:hover:bg-muted rounded-md"
           >
             <Share2 className="size-5" />
+            <span className="text-sm hidden sm:block">Share</span>
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-3xl p-0 pb-4 overflow-y-auto max-h-[680px] overflow-x-hidden gap-0 rounded-xl">
