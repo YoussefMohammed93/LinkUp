@@ -56,6 +56,7 @@ import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import React, { JSX, useRef, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
+import ReactionListDialog from "./reactions-list-dialog";
 import OnlineStatusIndicator from "./online-status-indicator";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 
@@ -163,6 +164,7 @@ export function Post({ post, onDelete }: PostProps) {
 
   const [openDialog, setOpenDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [openReactionDialog, setOpenReactionDialog] = useState(false);
 
   const [hoverOpen, setHoverOpen] = useState(false);
   const openTimeoutRef = useRef<number | null>(null);
@@ -623,8 +625,12 @@ export function Post({ post, onDelete }: PostProps) {
               <Skeleton className="w-14 h-4 rounded-md dark:bg-card/50" />
             </div>
           ) : reactions && reactions.length > 0 ? (
-            <div className="flex items-center gap-2">
-              <div className="flex pt-1.5 pb-2">
+            <div
+              role="button"
+              onClick={() => setOpenReactionDialog(true)}
+              className="flex items-center gap-1.5 group cursor-pointer"
+            >
+              <div className="flex pt-1.5 pb-2 ml-1">
                 {(() => {
                   const counts = reactions.reduce<Record<string, number>>(
                     (acc, curr) => {
@@ -655,7 +661,7 @@ export function Post({ post, onDelete }: PostProps) {
                   ));
                 })()}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="group-hover:underline text-sm text-muted-foreground">
                 {reactions.length}
               </div>
             </div>
@@ -1092,6 +1098,11 @@ export function Post({ post, onDelete }: PostProps) {
           onClose={() => setEditDialogOpen(false)}
         />
       )}
+      <ReactionListDialog
+        open={openReactionDialog}
+        onOpenChange={setOpenReactionDialog}
+        postId={post._id}
+      />
     </>
   );
 }

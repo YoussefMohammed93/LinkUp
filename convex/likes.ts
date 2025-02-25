@@ -14,9 +14,11 @@ export const getLikes = query({
       likes.map(async (like) => {
         const user = await ctx.db.get(like.userId);
         return {
+          userId: like.userId,
           reaction: like.reaction,
           firstName: user?.firstName,
           lastName: user?.lastName,
+          imageUrl: user?.imageUrl,
         };
       })
     );
