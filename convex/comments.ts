@@ -7,9 +7,7 @@ export const createComment = mutation({
   args: { postId: v.id("posts"), content: v.string() },
   handler: async (ctx, { postId, content }) => {
     const user = await getCurrentUser(ctx);
-
     if (!user) throw new Error("Unauthorized: User not found");
-
     return await ctx.db.insert("comments", {
       content,
       authorId: user._id,
@@ -36,21 +34,29 @@ export const deleteComment = mutation({
   args: { commentId: v.id("comments") },
   handler: async (ctx, { commentId }) => {
     const user = await getCurrentUser(ctx);
-
     if (!user) throw new Error("Unauthorized: User not found");
-
     const comment = await ctx.db.get(commentId);
-
     if (!comment) throw new Error("Comment not found");
-
     const post = await ctx.db.get(comment.postId);
-
     if (!post) throw new Error("Post not found");
-
     if (comment.authorId !== user._id && post.authorId !== user._id) {
       throw new Error("Unauthorized: You can only delete your own comments");
     }
-
     await ctx.db.delete(commentId);
+  },
+});
+
+// Mutation to update a comment (only by its author)
+export const updateComment = mutation({
+  args: { commentId: v.id("comments"), content: v.string() },
+  handler: async (ctx, { commentId, content }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized: User not found");
+    const comment = await ctx.db.get(commentId);
+    if (!comment) throw new Error("Comment not found");
+    if (comment.authorId !== user._id) {
+      throw new Error("Unauthorized: You can only update your own comments");
+    }
+    await ctx.db.patch(commentId, { content, edited: true });
   },
 });

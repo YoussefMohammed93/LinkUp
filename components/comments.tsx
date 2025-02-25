@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  differenceInDays,
-  differenceInHours,
-  differenceInMinutes,
-  differenceInSeconds,
-} from "date-fns";
 import { toast } from "sonner";
 import { Input } from "./ui/input";
-import { Trash } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -16,11 +9,13 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/convex/_generated/api";
+import ExpandableText from "./expandable-text";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useQuery, useMutation } from "convex/react";
 import React, { useState, useCallback } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { Edit, MoreHorizontal, Trash } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface RawComment {
@@ -29,23 +24,12 @@ interface RawComment {
   authorId: Id<"users">;
   postId: Id<"posts">;
   createdAt: number;
+  edited?: boolean;
 }
 
 interface CommentsProps {
   postId: Id<"posts">;
   postOwnerId: Id<"users">;
-}
-
-function formatShortDistanceToNow(date: Date) {
-  const now = new Date();
-  const seconds = differenceInSeconds(now, date);
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = differenceInMinutes(now, date);
-  if (minutes < 60) return `${minutes}m`;
-  const hours = differenceInHours(now, date);
-  if (hours < 24) return `${hours}h`;
-  const days = differenceInDays(now, date);
-  return `${days}d`;
 }
 
 function CommentSkeleton() {
@@ -71,8 +55,20 @@ export default function Comments({ postId, postOwnerId }: CommentsProps) {
   const comments: RawComment[] = commentsData || [];
   const createComment = useMutation(api.comments.createComment);
   const deleteCommentMutation = useMutation(api.comments.deleteComment);
+  const updateCommentMutation = useMutation(api.comments.updateComment);
+
   const [newComment, setNewComment] = useState("");
   const [showAll, setShowAll] = useState(false);
+  const [editingCommentId, setEditingCommentId] =
+    useState<Id<"comments"> | null>(null);
+  const [editedCommentContent, setEditedCommentContent] = useState("");
+
+  // Callback ref for focusing the inline edit input.
+  const editInputRef = useCallback((node: HTMLInputElement | null) => {
+    if (node) {
+      node.focus();
+    }
+  }, []);
 
   const handlePublishComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,6 +96,41 @@ export default function Comments({ postId, postOwnerId }: CommentsProps) {
     [deleteCommentMutation]
   );
 
+  const handleStartEdit = useCallback((comment: RawComment) => {
+    setEditingCommentId(comment._id);
+    setEditedCommentContent(comment.content);
+  }, []);
+
+  const handleSaveEdit = async () => {
+    if (!editedCommentContent.trim()) {
+      toast.error("Comment content cannot be empty.");
+      return;
+    }
+    try {
+      await updateCommentMutation({
+        commentId: editingCommentId!,
+        content: editedCommentContent,
+      });
+      toast.success("Comment updated successfully!");
+      setEditingCommentId(null);
+      setEditedCommentContent("");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update comment!");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditedCommentContent("");
+  };
+
+  // Only allow editing if the current user is the comment author.
+  const canEdit = (comment: RawComment) => {
+    return currentUser && currentUser._id === comment.authorId;
+  };
+
+  // Allow deletion if the current user is either the comment author or the post owner.
   const canDelete = (comment: RawComment) => {
     return (
       currentUser &&
@@ -111,10 +142,11 @@ export default function Comments({ postId, postOwnerId }: CommentsProps) {
     const commentAuthor = useQuery(api.users.getUserById, {
       id: comment.authorId,
     });
-
     if (!commentAuthor) {
       return <CommentSkeleton />;
     }
+
+    const isEditing = editingCommentId === comment._id;
 
     return (
       <div className="flex gap-3 items-start my-2">
@@ -133,35 +165,72 @@ export default function Comments({ postId, postOwnerId }: CommentsProps) {
         </Avatar>
         <div className="w-full flex flex-col gap-1">
           <div className="w-full max-w-xl flex items-center gap-3 flex-1">
-            <div className="w-full bg-secondary px-3 py-2 mt-1 rounded-2xl break-words">
-              <div>
+            <div className="w-full bg-secondary px-3 py-2 mt-1 rounded-2xl break-words group">
+              <div className="flex justify-between items-center">
                 <span className="text-sm font-semibold">
                   {commentAuthor.firstName} {commentAuthor.lastName}
                 </span>
+                {(canEdit(comment) || canDelete(comment)) && !isEditing && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 duration-200 transition-opacity border bg-background hover:bg-background-hover"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {canEdit(comment) && (
+                        <DropdownMenuItem
+                          onClick={() => handleStartEdit(comment)}
+                        >
+                          <Edit className="size-4" />
+                          Edit comment
+                        </DropdownMenuItem>
+                      )}
+                      {canDelete(comment) && (
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteComment(comment._id)}
+                        >
+                          <Trash className="size-4" />
+                          Delete comment
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
-              <div className="text-sm font-medium max-w-[225px] sm:max-w-[500px]">
-                {comment.content}
-              </div>
-            </div>
-            {canDelete(comment) && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Trash className="h-4 w-4 text-red-500" />
+              {isEditing ? (
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    type="text"
+                    ref={editInputRef}
+                    value={editedCommentContent}
+                    onChange={(e) => setEditedCommentContent(e.target.value)}
+                    className="flex-1"
+                    autoFocus
+                  />
+                  <Button onClick={handleSaveEdit}>Save</Button>
+                  <Button variant="outline" onClick={handleCancelEdit}>
+                    Cancel
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem
-                    onClick={() => handleDeleteComment(comment._id)}
-                  >
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                </div>
+              ) : (
+                <div className="text-sm font-medium max-w-[225px] sm:max-w-[500px]">
+                  <ExpandableText text={comment.content} />
+                  {comment.edited && (
+                    <span className="text-xs text-muted-foreground">
+                      (Edited)
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <span className="ml-1 font-medium text-xs text-muted-foreground">
-            {formatShortDistanceToNow(new Date(comment.createdAt))}
+            {new Date(comment.createdAt).toLocaleString()}
           </span>
         </div>
       </div>

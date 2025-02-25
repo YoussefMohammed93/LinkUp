@@ -78,6 +78,7 @@ export default defineSchema({
     content: v.string(),
     authorId: v.id("users"),
     postId: v.id("posts"),
+    edited: v.optional(v.boolean()),
     createdAt: v.number(),
   })
     .index("byPost", ["postId"])

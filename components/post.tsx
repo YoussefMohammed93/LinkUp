@@ -631,7 +631,7 @@ export function Post({ post, onDelete }: PostProps) {
                 onClick={() => setOpenReactionDialog(true)}
                 className="flex items-center gap-1.5 group cursor-pointer"
               >
-                <div className="flex pt-1.5 pb-2 ml-1">
+                <div className="flex pt-1.5 pb-2">
                   {(() => {
                     const counts = reactions.reduce<Record<string, number>>(
                       (acc, curr) => {
