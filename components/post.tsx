@@ -12,6 +12,7 @@ import {
   UserMinus,
   Users,
   UserPlus,
+  Edit,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -50,6 +51,7 @@ import ReportDialog from "./report-dialog";
 import ZoomableImage from "./zoomable-image";
 import { api } from "@/convex/_generated/api";
 import ExpandableText from "./expandable-text";
+import EditPostDialog from "./edit-post-dialog";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import React, { JSX, useRef, useState } from "react";
@@ -102,6 +104,7 @@ export function Post({ post, onDelete }: PostProps) {
   );
 
   const authorUser = useQuery(api.users.getUserById, { id: authorId });
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const currentUser = useQuery(api.users.currentUser) as {
     _id: Id<"users">;
@@ -372,6 +375,21 @@ export function Post({ post, onDelete }: PostProps) {
               role="menu"
               aria-label="Post actions"
             >
+              {currentUser?._id === authorId && (
+                <DropdownMenuItem
+                  onSelect={() => setEditDialogOpen(true)}
+                  className="p-2.5 dark:hover:bg-secondary"
+                  role="menuitem"
+                >
+                  <Edit className="h-5 w-5" aria-hidden="true" />
+                  <div className="ml-2">
+                    <span>Edit Post</span>
+                    <p className="text-xs text-muted-foreground">
+                      Only the author can edit this post.
+                    </p>
+                  </div>
+                </DropdownMenuItem>
+              )}
               {currentUser?._id === authorId && (
                 <DropdownMenuItem
                   onSelect={() => setOpenDialog(true)}
@@ -645,7 +663,6 @@ export function Post({ post, onDelete }: PostProps) {
             ""
           )}
         </div>
-
         <CardFooter className="flex items-center justify-between border-t border-border p-2.5">
           <div className="sm:flex-1">
             <HoverCard open={hoverOpen} onOpenChange={setHoverOpen}>
@@ -686,6 +703,7 @@ export function Post({ post, onDelete }: PostProps) {
                             : "/like-transparent.png"
                         }
                         alt="like"
+                        priority
                         width={18}
                         height={18}
                       />
@@ -882,8 +900,8 @@ export function Post({ post, onDelete }: PostProps) {
           <DialogHeader>
             <DialogTitle>Confirm {isBlocked ? "Unblock" : "Block"}</DialogTitle>
             <DialogDescription className="pt-5">
-              Are you sure you want to {isBlocked ? "unblock" : "block"}{" "}
-              {authorName}?{" "}
+              Are you sure you want to {isBlocked ? "unblock" : "block"}
+              {authorName}?
               {isBlocked
                 ? "They will be able to see and contact you."
                 : "They will no longer be able to interact with you."}
@@ -1067,6 +1085,13 @@ export function Post({ post, onDelete }: PostProps) {
         isOpen={reportDialogOpen}
         onClose={() => setReportDialogOpen(false)}
       />
+      {editDialogOpen && (
+        <EditPostDialog
+          post={post}
+          isOpen={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+        />
+      )}
     </>
   );
 }

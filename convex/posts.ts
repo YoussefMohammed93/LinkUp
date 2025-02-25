@@ -263,3 +263,32 @@ export const sharePost = mutation({
     });
   },
 });
+
+// Mutation: Update a post (only by the author) without changing createdAt
+export const updatePost = mutation({
+  args: {
+    postId: v.id("posts"),
+    content: v.string(),
+    images: v.optional(v.array(v.string())),
+    visibility: v.union(v.literal("public"), v.literal("friends-only")),
+  },
+  handler: async (ctx, { postId, content, images, visibility }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) {
+      throw new Error("Unauthorized: User not found.");
+    }
+    const post = await ctx.db.get(postId);
+    if (!post) {
+      throw new Error("Post not found.");
+    }
+    if (post.authorId !== user._id) {
+      throw new Error("Unauthorized: Only the author can edit this post.");
+    }
+
+    await ctx.db.patch(postId, {
+      content,
+      images: images || [],
+      visibility,
+    });
+  },
+});
