@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  MessageSquare,
   Bookmark,
   Trash,
   MoreHorizontal,
@@ -33,18 +32,17 @@ import {
 } from "@/components/ui/dialog";
 import Comments from "./comments";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useTheme } from "next-themes";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import ShareDialog from "./share-dialog";
 import { Skeleton } from "./ui/skeleton";
 import ReportDialog from "./report-dialog";
@@ -107,6 +105,10 @@ export function Post({ post, onDelete }: PostProps) {
   const authorUser = useQuery(api.users.getUserById, { id: authorId });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
+  const comments = useQuery(api.comments.getCommentsForPost, {
+    postId: post._id,
+  });
+
   const currentUser = useQuery(api.users.currentUser) as {
     _id: Id<"users">;
   } | null;
@@ -136,13 +138,13 @@ export function Post({ post, onDelete }: PostProps) {
     "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry",
     JSX.Element
   > = {
-    like: <Image src="/like.svg" alt="like" width={16} height={16} />,
-    love: <Image src="/love.svg" alt="love" width={16} height={16} />,
-    care: <Image src="/care.svg" alt="care" width={16} height={16} />,
-    haha: <Image src="/haha.svg" alt="haha" width={16} height={16} />,
-    wow: <Image src="/wow.svg" alt="wow" width={16} height={16} />,
-    sad: <Image src="/sad.svg" alt="sad" width={16} height={16} />,
-    angry: <Image src="/angry.svg" alt="angry" width={16} height={16} />,
+    like: <Image src="/like.svg" alt="like" width={18} height={18} />,
+    love: <Image src="/love.svg" alt="love" width={18} height={18} />,
+    care: <Image src="/care.svg" alt="care" width={18} height={18} />,
+    haha: <Image src="/haha.svg" alt="haha" width={18} height={18} />,
+    wow: <Image src="/wow.svg" alt="wow" width={18} height={18} />,
+    sad: <Image src="/sad.svg" alt="sad" width={18} height={18} />,
+    angry: <Image src="/angry.svg" alt="angry" width={18} height={18} />,
   };
 
   const hoverReactionIcons: Record<
@@ -159,8 +161,6 @@ export function Post({ post, onDelete }: PostProps) {
   };
 
   const isFriends = currentUser && isFollowing && isFollowedBy;
-
-  const { theme } = useTheme();
 
   const [openDialog, setOpenDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -387,7 +387,7 @@ export function Post({ post, onDelete }: PostProps) {
                   <div className="ml-2">
                     <span>Edit Post</span>
                     <p className="text-xs text-muted-foreground">
-                      Only the author can edit this post.
+                      Edit, Update your post content.
                     </p>
                   </div>
                 </DropdownMenuItem>
@@ -619,67 +619,83 @@ export function Post({ post, onDelete }: PostProps) {
             </>
           )}
         </CardContent>
-        <div className="p-4 py-0">
-          {reactions === undefined ? (
-            <div className="flex items-center gap-2 pb-2.5">
-              <Skeleton className="w-14 h-4 rounded-md dark:bg-card/50" />
-            </div>
-          ) : reactions && reactions.length > 0 ? (
-            <div
-              role="button"
-              onClick={() => setOpenReactionDialog(true)}
-              className="flex items-center gap-1.5 group cursor-pointer"
-            >
-              <div className="flex pt-1.5 pb-2 ml-1">
-                {(() => {
-                  const counts = reactions.reduce<Record<string, number>>(
-                    (acc, curr) => {
-                      const type = curr.reaction;
-                      acc[type] = (acc[type] || 0) + 1;
-                      return acc;
-                    },
-                    {}
-                  );
-                  const topThree = Object.entries(counts)
-                    .sort(([, countA], [, countB]) => countB - countA)
-                    .slice(0, 3);
-                  return topThree.map(([reactionType]) => (
-                    <div key={reactionType} className="w-4 h-4">
-                      {
-                        reactionIcons[
-                          reactionType as
-                            | "like"
-                            | "love"
-                            | "care"
-                            | "haha"
-                            | "wow"
-                            | "sad"
-                            | "angry"
-                        ]
-                      }
-                    </div>
-                  ));
-                })()}
+        <div className="flex items-center justify-between gap-3 p-4 py-0">
+          <div>
+            {reactions === undefined ? (
+              <div className="flex items-center gap-2 pb-2.5">
+                <Skeleton className="w-14 h-4 rounded-md dark:bg-card/50" />
               </div>
-              <div className="group-hover:underline text-sm text-muted-foreground">
-                {reactions.length}
+            ) : reactions && reactions.length > 0 ? (
+              <div
+                role="button"
+                onClick={() => setOpenReactionDialog(true)}
+                className="flex items-center gap-1.5 group cursor-pointer"
+              >
+                <div className="flex pt-1.5 pb-2 ml-1">
+                  {(() => {
+                    const counts = reactions.reduce<Record<string, number>>(
+                      (acc, curr) => {
+                        const type = curr.reaction;
+                        acc[type] = (acc[type] || 0) + 1;
+                        return acc;
+                      },
+                      {}
+                    );
+                    const topThree = Object.entries(counts)
+                      .sort(([, countA], [, countB]) => countB - countA)
+                      .slice(0, 3);
+                    return topThree.map(([reactionType]) => (
+                      <div key={reactionType} className="w-4 h-4">
+                        {
+                          reactionIcons[
+                            reactionType as
+                              | "like"
+                              | "love"
+                              | "care"
+                              | "haha"
+                              | "wow"
+                              | "sad"
+                              | "angry"
+                          ]
+                        }
+                      </div>
+                    ));
+                  })()}
+                </div>
+                <div className="group-hover:underline text-sm text-muted-foreground">
+                  {reactions.length}
+                </div>
               </div>
-            </div>
-          ) : (
-            ""
-          )}
+            ) : (
+              ""
+            )}
+          </div>
+          <div>
+            {comments && comments.length > 0 ? (
+              <div
+                role="button"
+                onClick={() => setIsCommentsDialogOpen(true)}
+                className="text-sm text-muted-foreground hover:underline"
+              >
+                {comments.length}{" "}
+                {comments.length === 1 ? "comment" : "comments"}
+              </div>
+            ) : (
+              ""
+            )}
+          </div>
         </div>
         <CardFooter className="flex items-center justify-between border-t border-border p-2.5">
           <div className="sm:flex-1">
             <HoverCard open={hoverOpen} onOpenChange={setHoverOpen}>
               <HoverCardTrigger asChild>
                 {reactions === undefined ? (
-                  <Skeleton className="w-14 h-7 rounded-md m-2 dark:bg-card/50" />
+                  <Skeleton className="w-28 h-7 rounded-md m-2 dark:bg-card/50" />
                 ) : (
                   <Button
                     variant="ghost"
                     onClick={handleDefaultClick}
-                    className="w-full flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
+                    className="w-full flex items-center h-8 gap-1.5 px-3 py-1.5 dark:hover:bg-muted rounded-md"
                     onMouseEnter={() => {
                       if (closeTimeoutRef.current) {
                         clearTimeout(closeTimeoutRef.current);
@@ -702,17 +718,20 @@ export function Post({ post, onDelete }: PostProps) {
                     {currentReaction ? (
                       reactionIcons[currentReaction]
                     ) : (
-                      <Image
-                        src={
-                          theme === "dark"
-                            ? "/like-transparent-dark.png"
-                            : "/like-transparent.png"
-                        }
-                        alt="like"
-                        priority
-                        width={18}
-                        height={18}
-                      />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="size-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z"
+                        />
+                      </svg>
                     )}
                     <span className="text-sm">
                       {currentReaction
@@ -838,9 +857,22 @@ export function Post({ post, onDelete }: PostProps) {
               variant="ghost"
               size="sm"
               onClick={() => setIsCommentsDialogOpen(true)}
-              className="w-full flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
+              className="w-full flex items-center gap-1.5 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
-              <MessageSquare className="size-5" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="size-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z"
+                />
+              </svg>
               <span className="text-sm">Comment</span>
             </Button>
           </div>
@@ -856,11 +888,22 @@ export function Post({ post, onDelete }: PostProps) {
               onClick={handleToggleBookmark}
               className="w-full flex items-center gap-1 px-3 py-1.5 dark:hover:bg-muted rounded-md"
             >
-              <Bookmark
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
                 className={`size-5 ${
                   hasBookmarked ? "fill-primary text-primary" : ""
                 }`}
-              />
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"
+                />
+              </svg>
               <span className="text-sm hidden sm:block">
                 {hasBookmarked ? "Bookmarked" : "Bookmark"}
               </span>
