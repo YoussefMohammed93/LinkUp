@@ -555,7 +555,7 @@ export function Post({ post, onDelete }: PostProps) {
                     </div>
                   </Link>
                   <Link
-                    href={`/posts/${post._id}`}
+                    href={`/posts/${sharedPost._id}`}
                     className="flex items-center gap-1 text-xs text-muted-foreground hover:underline"
                   >
                     <span>
@@ -580,7 +580,7 @@ export function Post({ post, onDelete }: PostProps) {
                   </Link>
                 </div>
               </div>
-              <Link href={`/posts/${post._id}`} className="mt-3">
+              <Link href={`/posts/${sharedPost._id}`} className="mt-3">
                 <ExpandableText text={sharedPost.content} />
               </Link>
               {sharedPost.images && sharedPost.images.length > 0 && (

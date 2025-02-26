@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { toast } from "sonner";
 import { Input } from "./ui/input";
 import {
@@ -16,7 +17,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import React, { useState, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Edit, MoreHorizontal, Trash } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface RawComment {
   _id: Id<"comments">;
@@ -28,28 +28,36 @@ interface RawComment {
 }
 
 interface CommentsProps {
+  className?: string;
   postId: Id<"posts">;
   postOwnerId: Id<"users">;
 }
 
 function CommentSkeleton() {
   return (
-    <div className="flex gap-3 items-start my-4">
+    <div className="flex gap-1 items-start">
       <div>
-        <Skeleton className="h-9 w-9 rounded-full" />
+        <Skeleton className="h-9 w-9 rounded-full bg-card dark:bg-[#252728] dark:border-hidden border" />
       </div>
-      <div className="w-full flex flex-col gap-1">
-        <div className="w-full max-w-xl flex items-start gap-3 flex-1">
-          <Skeleton className="h-2 w-24" />
-          <Skeleton className="h-5 w-full max-w-[225px] sm:max-w-[500px]" />
+      <div className="w-full">
+        <div className="w-full max-w-xl flex items-center gap-3 flex-1">
+          <div className="w-full bg-secondary px-3 py-3 mt-1 rounded-2xl break-words">
+            <div className="flex justify-between items-center mb-2">
+              <Skeleton className="h-4 w-32 bg-card dark:bg-card/50 dark:border-hidden border" />
+            </div>
+            <Skeleton className="h-20 w-full max-w-[225px] sm:max-w-[500px] bg-card dark:bg-card/50 dark:border-hidden border" />
+          </div>
         </div>
-        <Skeleton className="h-2 w-12 ml-0.5" />
       </div>
     </div>
   );
 }
 
-export default function Comments({ postId, postOwnerId }: CommentsProps) {
+export default function Comments({
+  postId,
+  postOwnerId,
+  className,
+}: CommentsProps) {
   const currentUser = useQuery(api.users.currentUser);
   const commentsData = useQuery(api.comments.getCommentsForPost, { postId });
   const comments: RawComment[] = commentsData || [];
@@ -63,11 +71,8 @@ export default function Comments({ postId, postOwnerId }: CommentsProps) {
     useState<Id<"comments"> | null>(null);
   const [editedCommentContent, setEditedCommentContent] = useState("");
 
-  // Callback ref for focusing the inline edit input.
   const editInputRef = useCallback((node: HTMLInputElement | null) => {
-    if (node) {
-      node.focus();
-    }
+    if (node) node.focus();
   }, []);
 
   const handlePublishComment = async (e: React.FormEvent) => {
@@ -125,60 +130,67 @@ export default function Comments({ postId, postOwnerId }: CommentsProps) {
     setEditedCommentContent("");
   };
 
-  // Only allow editing if the current user is the comment author.
-  const canEdit = (comment: RawComment) => {
-    return currentUser && currentUser._id === comment.authorId;
-  };
+  const canEdit = (comment: RawComment) =>
+    currentUser && currentUser._id === comment.authorId;
 
-  // Allow deletion if the current user is either the comment author or the post owner.
-  const canDelete = (comment: RawComment) => {
-    return (
-      currentUser &&
-      (currentUser._id === comment.authorId || currentUser._id === postOwnerId)
-    );
-  };
+  const canDelete = (comment: RawComment) =>
+    currentUser &&
+    (currentUser._id === comment.authorId || currentUser._id === postOwnerId);
 
   const CommentItem = ({ comment }: { comment: RawComment }) => {
     const commentAuthor = useQuery(api.users.getUserById, {
       id: comment.authorId,
     });
-    if (!commentAuthor) {
-      return <CommentSkeleton />;
-    }
+    if (!commentAuthor) return <CommentSkeleton />;
 
     const isEditing = editingCommentId === comment._id;
 
+    function formatTimeAgo(date: Date): string {
+      const now = new Date();
+      const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+      if (seconds < 60) return "Just now";
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      if (days < 30) return `${days}d ago`;
+      const months = Math.floor(days / 30);
+      return `${months}mo ago`;
+    }
+
     return (
       <div className="flex gap-3 items-start my-2">
-        <Avatar className="h-9 w-9">
-          {commentAuthor.imageUrl ? (
-            <AvatarImage
-              src={commentAuthor.imageUrl}
-              alt={commentAuthor.firstName}
-            />
-          ) : (
-            <AvatarFallback>
-              {commentAuthor.firstName?.[0] || "?"}
-              {commentAuthor.lastName?.[0] || ""}
-            </AvatarFallback>
-          )}
-        </Avatar>
+        <Image
+          src={commentAuthor.imageUrl || ""}
+          width={36}
+          height={36}
+          className="obc rounded-full"
+          alt={`${commentAuthor.firstName} Image`}
+        />
         <div className="w-full flex flex-col gap-1">
           <div className="w-full max-w-xl flex items-center gap-3 flex-1">
-            <div className="w-full bg-secondary px-3 py-2 mt-1 rounded-2xl break-words group">
+            <div
+              className={`w-full relative ${
+                className ? className : "bg-secondary"
+              } px-3 py-3 mt-1 rounded-2xl break-words group`}
+            >
               <div className="flex justify-between items-center">
                 <span className="text-sm font-semibold">
                   {commentAuthor.firstName} {commentAuthor.lastName}
                 </span>
                 {(canEdit(comment) || canDelete(comment)) && !isEditing && (
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger
+                      asChild
+                      className="absolute top-2 right-2"
+                    >
                       <Button
                         variant="ghost"
                         size="icon"
                         className="opacity-0 group-hover:opacity-100 duration-200 transition-opacity border bg-background hover:bg-background-hover"
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreHorizontal className="size-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
@@ -218,7 +230,7 @@ export default function Comments({ postId, postOwnerId }: CommentsProps) {
                   </Button>
                 </div>
               ) : (
-                <div className="text-sm font-medium max-w-[225px] sm:max-w-[500px]">
+                <div className="mt-1 text-sm font-medium max-w-[225px] sm:max-w-[500px]">
                   <ExpandableText text={comment.content} />
                   {comment.edited && (
                     <span className="text-xs text-muted-foreground">
@@ -229,8 +241,8 @@ export default function Comments({ postId, postOwnerId }: CommentsProps) {
               )}
             </div>
           </div>
-          <span className="ml-1 font-medium text-xs text-muted-foreground">
-            {new Date(comment.createdAt).toLocaleString()}
+          <span className="ml-2 font-medium text-xs text-muted-foreground">
+            {formatTimeAgo(new Date(comment.createdAt))}
           </span>
         </div>
       </div>
@@ -274,7 +286,7 @@ export default function Comments({ postId, postOwnerId }: CommentsProps) {
           onChange={(e) => setNewComment(e.target.value)}
         />
         <Button type="submit" disabled={!newComment.trim()}>
-          Post
+          Comment
         </Button>
       </form>
     </div>

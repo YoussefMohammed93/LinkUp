@@ -2,6 +2,7 @@
 "use client";
 
 import { Post } from "@/components/post";
+import Comments from "@/components/comments";
 import { Suspense, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -13,18 +14,22 @@ import type { Id } from "@/convex/_generated/dataModel";
 
 function PostLoadingSkeleton() {
   return (
-    <div className="w-full h-full mt-5 p-4 border rounded-lg bg-card dark:bg-[#252728] space-y-4">
-      <div className="flex items-center gap-4">
-        <Skeleton className="w-10 h-10 rounded-full" />
-        <div className="flex flex-col space-y-2">
-          <Skeleton className="w-24 h-4" />
-          <Skeleton className="w-16 h-3" />
+    <div className="w-full h-full mt-5">
+      <div className="p-3 border rounded-md bg-card dark:bg-[#252728]">
+        <div className="flex items-center gap-2">
+          <Skeleton className="w-10 h-10 dark:bg-card/50 rounded-full" />
+          <div className="flex flex-col gap-1">
+            <Skeleton className="w-24 h-4 dark:bg-card/50" />
+            <Skeleton className="w-16 h-3 dark:bg-card/50" />
+          </div>
+        </div>
+        <Skeleton className="w-full h-5 mt-3 dark:bg-card/50" />
+        <Skeleton className="w-full h-5 mt-1 dark:bg-card/50" />
+        <Skeleton className="w-full h-5 mt-1 dark:bg-card/50" />
+        <div className="mt-2">
+          <Skeleton className="w-full h-[80px] dark:bg-card/50 rounded-md" />
         </div>
       </div>
-      <Skeleton className="w-full h-5" />
-      <Skeleton className="w-full h-5" />
-      <Skeleton className="w-full h-5" />
-      <Skeleton className="w-full h-5 rounded-md" />
     </div>
   );
 }
@@ -41,12 +46,14 @@ function PostNotFoundComponent() {
 
 function PostPageContent({ postId }: { postId: string }) {
   const typedPostId = postId as Id<"posts">;
+
   const post = useQuery(api.posts.getPostById, { postId: typedPostId });
   const deletePostMutation = useMutation(api.posts.deletePost);
 
   const [deleted, setDeleted] = useState(false);
 
   if (deleted) return <PostNotFoundComponent />;
+
   if (!post) return <PostLoadingSkeleton />;
 
   const handleDelete = async (postId: string) => {
@@ -68,6 +75,13 @@ function PostPageContent({ postId }: { postId: string }) {
         }}
         onDelete={handleDelete}
       />
+      <div className="mt-8">
+        <Comments
+          postId={typedPostId}
+          postOwnerId={post.authorId}
+          className="border bg-card dark:bg-[#252728]"
+        />
+      </div>
     </div>
   );
 }
@@ -85,7 +99,7 @@ export default function PostPage() {
         : undefined;
 
   if (!postId) {
-    return <div>Error: postId is missing</div>;
+    return <div>Error: Post ID is missing.</div>;
   }
 
   const currentUser = useQuery(api.users.currentUser);
