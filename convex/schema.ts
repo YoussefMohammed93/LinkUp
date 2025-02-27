@@ -83,4 +83,19 @@ export default defineSchema({
   })
     .index("byPost", ["postId"])
     .index("byAuthor", ["authorId"]),
+
+  commentLikes: defineTable({
+    commentId: v.id("comments"),
+    userId: v.id("users"),
+    reaction: v.union(
+      v.literal("like"),
+      v.literal("love"),
+      v.literal("care"),
+      v.literal("haha"),
+      v.literal("wow"),
+      v.literal("sad"),
+      v.literal("angry")
+    ),
+    createdAt: v.number(),
+  }).index("byComment", ["commentId"]),
 });

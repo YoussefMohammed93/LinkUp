@@ -2,8 +2,8 @@
 "use client";
 
 import { Post } from "@/components/post";
-import Comments from "@/components/comments";
 import { Suspense, useState } from "react";
+import Comments from "@/components/comments";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -75,12 +75,8 @@ function PostPageContent({ postId }: { postId: string }) {
         }}
         onDelete={handleDelete}
       />
-      <div className="mt-8">
-        <Comments
-          postId={typedPostId}
-          postOwnerId={post.authorId}
-          className="border bg-card dark:bg-[#252728]"
-        />
+      <div className="mt-8 bg-card p-5 rounded-lg border">
+        <Comments postId={typedPostId} postOwnerId={post.authorId} />
       </div>
     </div>
   );

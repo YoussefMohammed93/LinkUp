@@ -10,11 +10,11 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useQuery } from "convex/react";
-import React, { JSX, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
+import React, { JSX, useState, useCallback } from "react";
 
 const reactionIcons: Record<
   "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry",
@@ -29,28 +29,74 @@ const reactionIcons: Record<
   angry: <Image src="/angry.svg" alt="angry" width={16} height={16} />,
 };
 
+type ReactionTarget = "post" | "comment";
+
+type Reaction = {
+  userId: string;
+  reaction: "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry";
+  firstName?: string;
+  lastName?: string;
+  imageUrl?: string;
+};
+
 type ReactionListDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  postId: Id<"posts">;
+  targetType: ReactionTarget;
+  targetId: Id<"posts"> | Id<"comments">;
 };
+
+function ReactionItem({ reaction }: { reaction: Reaction }) {
+  const user = useQuery(api.users.getUserById, {
+    id: reaction.userId as Id<"users">,
+  });
+
+  return (
+    <div className="flex items-center space-x-4 py-2 border-b last:border-none">
+      <Link
+        href={`/users/${reaction.userId}`}
+        className="flex items-center space-x-4"
+      >
+        <div className="relative h-11 w-11">
+          <Image
+            width={100}
+            height={100}
+            loading="lazy"
+            src={user?.imageUrl || "/avatar-placeholder.png"}
+            alt={user ? `${user.firstName} ${user.lastName}` : reaction.userId}
+            className="h-11 w-11 rounded-full object-cover"
+          />
+          <div className="absolute bottom-0 right-0">
+            {reactionIcons[reaction.reaction]}
+          </div>
+        </div>
+        <div>
+          <span className="font-medium text-foreground">
+            {user ? `${user.firstName} ${user.lastName}` : reaction.userId}
+          </span>
+        </div>
+      </Link>
+    </div>
+  );
+}
 
 export default function ReactionListDialog({
   open,
   onOpenChange,
-  postId,
+  targetType,
+  targetId,
 }: ReactionListDialogProps) {
   const pageSize = 5;
 
-  const reactionsData = useQuery(api.likes.getLikes, { postId }) as
-    | {
-        userId: string;
-        reaction: "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry";
-        firstName?: string;
-        lastName?: string;
-        imageUrl?: string;
-      }[]
-    | undefined;
+  const queryParams =
+    targetType === "post"
+      ? { postId: targetId as Id<"posts"> }
+      : { commentId: targetId as Id<"comments"> };
+
+  const reactionsData = useQuery(
+    targetType === "post" ? api.likes.getLikes : api.commentLikes.getLikes,
+    queryParams
+  ) as Reaction[] | undefined;
 
   const reactionTypesPresent = reactionsData
     ? (Array.from(new Set(reactionsData.map((r) => r.reaction))) as (
@@ -67,14 +113,17 @@ export default function ReactionListDialog({
   const [currentTab, setCurrentTab] = useState<
     null | "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry"
   >(null);
-
   const [visibleCount, setVisibleCount] = useState(pageSize);
-  const handleTabChange = (
-    tab: null | "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry"
-  ) => {
-    setCurrentTab(tab);
-    setVisibleCount(pageSize);
-  };
+
+  const handleTabChange = useCallback(
+    (
+      tab: null | "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry"
+    ) => {
+      setCurrentTab(tab);
+      setVisibleCount(pageSize);
+    },
+    []
+  );
 
   const filteredReactions = reactionsData
     ? currentTab
@@ -90,7 +139,7 @@ export default function ReactionListDialog({
     filteredReactions.length === 0
       ? currentTab
         ? `No users reacted with ${currentTab}.`
-        : "No reactions for this post."
+        : "No reactions for this item."
       : "";
 
   return (
@@ -147,39 +196,10 @@ export default function ReactionListDialog({
           ) : (
             <>
               {visibleReactions.map((reaction, index) => (
-                <div
+                <ReactionItem
                   key={`${reaction.userId}-${index}`}
-                  className="flex items-center space-x-4 py-2 border-b last:border-none"
-                >
-                  <Link
-                    href={`/users/${String(reaction.userId)}`}
-                    className="flex items-center space-x-4"
-                  >
-                    <div className="relative h-11 w-11">
-                      <Image
-                        width={100}
-                        height={100}
-                        loading="lazy"
-                        src={reaction.imageUrl || "/avatar-placeholder.png"}
-                        alt={
-                          reaction.firstName || reaction.lastName
-                            ? `${reaction.firstName ?? ""} ${reaction.lastName ?? ""}`
-                            : String(reaction.userId)
-                        }
-                        className="h-11 w-11 rounded-full object-cover"
-                      />
-                      <div className="absolute bottom-0 right-0">
-                        {reactionIcons[reaction.reaction]}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="font-medium text-foreground">
-                        {reaction.firstName || String(reaction.userId)}{" "}
-                        {reaction.lastName || ""}
-                      </span>
-                    </div>
-                  </Link>
-                </div>
+                  reaction={reaction}
+                />
               ))}
               {hasMore && (
                 <div className="text-center py-2 rounded-lg">

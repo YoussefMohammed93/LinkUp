@@ -30,13 +30,13 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import Comments from "./comments";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import Comments from "./comments";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -1157,7 +1157,8 @@ export function Post({ post, onDelete }: PostProps) {
       <ReactionListDialog
         open={openReactionDialog}
         onOpenChange={setOpenReactionDialog}
-        postId={post._id}
+        targetType="post"
+        targetId={post._id}
       />
     </>
   );
