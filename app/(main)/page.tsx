@@ -2,6 +2,7 @@
 
 import { api } from "@/convex/_generated/api";
 import PostEditor from "@/components/post-editor";
+import { StoryRow } from "@/components/story-row";
 import { useQuery, useMutation } from "convex/react";
 import InfinitePostsList from "@/components/posts-list";
 import PeopleSidebar from "@/components/people-sidebar";
@@ -30,6 +31,7 @@ export default function MainPage() {
     <main className="flex w-full min-w-0 gap-5 mt-5">
       <div className="w-full min-w-0 space-y-5">
         <PostEditor />
+        <StoryRow />
         <Tabs defaultValue="for-you">
           <TabsList className="w-full flex gap-1 bg-card border">
             <TabsTrigger value="for-you" className="w-1/2">

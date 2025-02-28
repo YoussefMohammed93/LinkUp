@@ -22,6 +22,7 @@ import type * as http from "../http.js";
 import type * as likes from "../likes.js";
 import type * as posts from "../posts.js";
 import type * as reports from "../reports.js";
+import type * as stories from "../stories.js";
 import type * as users from "../users.js";
 
 /**
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   likes: typeof likes;
   posts: typeof posts;
   reports: typeof reports;
+  stories: typeof stories;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

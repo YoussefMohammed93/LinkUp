@@ -98,4 +98,14 @@ export default defineSchema({
     ),
     createdAt: v.number(),
   }).index("byComment", ["commentId"]),
+
+  stories: defineTable({
+    content: v.optional(v.string()),
+    imageUrls: v.optional(v.array(v.string())),
+    authorId: v.id("users"),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("byAuthor", ["authorId"])
+    .index("byCreationTime", ["createdAt"]),
 });
