@@ -12,6 +12,7 @@ import {
   Users,
   UserPlus,
   Edit,
+  Clipboard,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -138,26 +139,30 @@ export function Post({ post, onDelete }: PostProps) {
     "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry",
     JSX.Element
   > = {
-    like: <Image src="/like.svg" alt="like" width={18} height={18} />,
-    love: <Image src="/love.svg" alt="love" width={18} height={18} />,
-    care: <Image src="/care.svg" alt="care" width={18} height={18} />,
-    haha: <Image src="/haha.svg" alt="haha" width={18} height={18} />,
-    wow: <Image src="/wow.svg" alt="wow" width={18} height={18} />,
-    sad: <Image src="/sad.svg" alt="sad" width={18} height={18} />,
-    angry: <Image src="/angry.svg" alt="angry" width={18} height={18} />,
+    like: <Image src="/like.svg" alt="like" width={18} height={18} priority />,
+    love: <Image src="/love.svg" alt="love" width={18} height={18} priority />,
+    care: <Image src="/care.svg" alt="care" width={18} height={18} priority />,
+    haha: <Image src="/haha.svg" alt="haha" width={18} height={18} priority />,
+    wow: <Image src="/wow.svg" alt="wow" width={18} height={18} priority />,
+    sad: <Image src="/sad.svg" alt="sad" width={18} height={18} priority />,
+    angry: (
+      <Image src="/angry.svg" alt="angry" width={18} height={18} priority />
+    ),
   };
 
   const hoverReactionIcons: Record<
     "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry",
     JSX.Element
   > = {
-    like: <Image src="/like.svg" alt="like" width={32} height={32} />,
-    love: <Image src="/love.svg" alt="love" width={32} height={32} />,
-    care: <Image src="/care.svg" alt="care" width={32} height={32} />,
-    haha: <Image src="/haha.svg" alt="haha" width={32} height={32} />,
-    wow: <Image src="/wow.svg" alt="wow" width={32} height={32} />,
-    sad: <Image src="/sad.svg" alt="sad" width={32} height={32} />,
-    angry: <Image src="/angry.svg" alt="angry" width={32} height={32} />,
+    like: <Image src="/like.svg" alt="like" width={32} height={32} priority />,
+    love: <Image src="/love.svg" alt="love" width={32} height={32} priority />,
+    care: <Image src="/care.svg" alt="care" width={32} height={32} priority />,
+    haha: <Image src="/haha.svg" alt="haha" width={32} height={32} priority />,
+    wow: <Image src="/wow.svg" alt="wow" width={32} height={32} priority />,
+    sad: <Image src="/sad.svg" alt="sad" width={32} height={32} priority />,
+    angry: (
+      <Image src="/angry.svg" alt="angry" width={32} height={32} priority />
+    ),
   };
 
   const isFriends = currentUser && isFollowing && isFollowedBy;
@@ -413,6 +418,25 @@ export function Post({ post, onDelete }: PostProps) {
                   </div>
                 </DropdownMenuItem>
               )}
+              <DropdownMenuItem
+                onSelect={() => {
+                  const postUrl = `${window.location.origin}/posts/${post._id}`;
+                  navigator.clipboard
+                    .writeText(postUrl)
+                    .then(() => toast.success("Link copied to clipboard!"))
+                    .catch(() => toast.error("Failed to copy link."));
+                }}
+                className="p-2.5 dark:hover:bg-secondary"
+                role="menuitem"
+              >
+                <Clipboard className="h-5 w-5" aria-hidden="true" />
+                <div className="ml-2">
+                  <span>Copy link</span>
+                  <p className="text-xs text-muted-foreground">
+                    Copy post link to clipboard.
+                  </p>
+                </div>
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={handleToggleBookmark}
                 className="p-2.5 dark:hover:bg-secondary"

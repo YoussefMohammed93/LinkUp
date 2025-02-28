@@ -14,6 +14,7 @@ import { useQuery, useMutation } from "convex/react";
 import { Edit, Loader2, Upload } from "lucide-react";
 import PeopleSidebar from "@/components/people-sidebar";
 import FollowListDialog from "@/components/user-list-dialog";
+import CoverSelectImage from "@/components/cover-select-dialog";
 import { EditProfileDialog } from "@/components/edit-profile-dialog";
 import { ConfirmBlockDialog } from "@/components/confirm-block-dialog";
 
@@ -95,6 +96,7 @@ export default function UserPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [avatarLoading, setAvatarLoading] = useState(true);
+  const [isCoverSelectOpen, setIsCoverSelectOpen] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
@@ -198,35 +200,15 @@ export default function UserPage() {
                   />
                   {isOwner && (
                     <div className="absolute inset-0 flex items-center justify-center gap-2 rounded-tl-lg rounded-tr-lg bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                          e.target.files?.[0] &&
-                          handleImageUpload("cover", e.target.files[0])
-                        }
-                        className="hidden"
-                        id="cover-upload"
-                        disabled={isUploading}
-                      />
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() =>
-                          document.getElementById("cover-upload")?.click()
-                        }
+                        onClick={() => setIsCoverSelectOpen(true)}
                         disabled={isUploading}
                       >
-                        {isUploading ? (
-                          <span className="flex items-center gap-2">
-                            Uploading {uploadProgress}%{" "}
-                            <Loader2 className="animate-spin h-4 w-4" />
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-2">
-                            <Edit /> Change Cover
-                          </span>
-                        )}
+                        <span className="flex items-center gap-2">
+                          <Edit /> Change Cover
+                        </span>
                       </Button>
                     </div>
                   )}
@@ -241,32 +223,15 @@ export default function UserPage() {
                   />
                   {isOwner && (
                     <div className="absolute inset-0 flex items-center justify-center gap-2 rounded-tl-lg rounded-tr-lg bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                          e.target.files?.[0] &&
-                          handleImageUpload("cover", e.target.files[0])
-                        }
-                        className="hidden"
-                        id="cover-upload"
-                        disabled={isUploading}
-                      />
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() =>
-                          document.getElementById("cover-upload")?.click()
-                        }
+                        onClick={() => setIsCoverSelectOpen(true)}
                         disabled={isUploading}
                       >
-                        {isUploading ? (
-                          "Uploading..."
-                        ) : (
-                          <span className="flex items-center gap-2">
-                            <Upload /> Upload Cover
-                          </span>
-                        )}
+                        <span className="flex items-center gap-2">
+                          <Upload /> Upload Cover
+                        </span>
                       </Button>
                     </div>
                   )}
@@ -689,6 +654,10 @@ export default function UserPage() {
         )}
       </section>
       <PeopleSidebar />
+      <CoverSelectImage
+        isOpen={isCoverSelectOpen}
+        onOpenChange={setIsCoverSelectOpen}
+      />
     </>
   );
 }
