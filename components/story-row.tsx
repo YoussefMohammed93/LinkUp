@@ -29,7 +29,7 @@ export type StoryDoc = {
 
 export function StoryRow() {
   const currentUser = useQuery(api.users.currentUser);
-  const storiesRaw = (useQuery(api.stories.getActiveStories) || []).map(
+  const storiesRaw = (useQuery(api.stories.getActiveFriendStories) || []).map(
     (story) => ({
       ...story,
       createdAt: new Date(story.createdAt),
@@ -158,6 +158,11 @@ export function StoryRow() {
         onOpenChange={setViewerOpen}
         stories={selectedStories}
       />
+      <style jsx global>{`
+        .lucide.lucide-x.size-5 {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }

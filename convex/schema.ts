@@ -108,4 +108,12 @@ export default defineSchema({
   })
     .index("byAuthor", ["authorId"])
     .index("byCreationTime", ["createdAt"]),
+
+  storyViews: defineTable({
+    storyId: v.id("stories"),
+    userId: v.id("users"),
+    viewedAt: v.number(),
+  })
+    .index("byStory", ["storyId"])
+    .index("byUser", ["userId"]),
 });
