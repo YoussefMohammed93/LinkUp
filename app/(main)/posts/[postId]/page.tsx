@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client";
 
+import { Suspense } from "react";
+import { Undo } from "lucide-react";
 import { Post } from "@/components/post";
-import { Suspense, useState } from "react";
 import Comments from "@/components/comments";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -37,33 +38,29 @@ function PostLoadingSkeleton() {
 function PostNotFoundComponent() {
   const router = useRouter();
   return (
-    <div className="flex flex-col items-center justify-center h-full mt-10">
-      <h1 className="text-2xl font-bold mb-4">Post Not Found</h1>
-      <Button onClick={() => router.push("/")}>Go to Home</Button>
+    <div className="w-full h-[80vh] min-w-0 flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold mb-5">Post Not Found</h1>
+        <Button onClick={() => router.push("/")}>
+          <Undo className="size-5" /> Go to Home
+        </Button>
+      </div>
     </div>
   );
 }
 
 function PostPageContent({ postId }: { postId: string }) {
   const typedPostId = postId as Id<"posts">;
-
-  const post = useQuery(api.posts.getPostById, { postId: typedPostId });
   const deletePostMutation = useMutation(api.posts.deletePost);
+  const post = useQuery(api.posts.getPostById, { postId: typedPostId });
 
-  const [deleted, setDeleted] = useState(false);
+  if (post === undefined) {
+    return <PostLoadingSkeleton />;
+  }
 
-  if (deleted) return <PostNotFoundComponent />;
-
-  if (!post) return <PostLoadingSkeleton />;
-
-  const handleDelete = async (postId: string) => {
-    try {
-      await deletePostMutation({ postId: postId as Id<"posts"> });
-      setDeleted(true);
-    } catch (error) {
-      console.error("Error deleting post:", error);
-    }
-  };
+  if (post === null) {
+    return <PostNotFoundComponent />;
+  }
 
   return (
     <div className="w-full min-w-0 space-y-5 my-5 pb-10">
@@ -73,7 +70,13 @@ function PostPageContent({ postId }: { postId: string }) {
           authorImage: post.authorImageUrl || "/avatar-placeholder.png",
           images: post.images ?? [],
         }}
-        onDelete={handleDelete}
+        onDelete={async (postId: string) => {
+          try {
+            await deletePostMutation({ postId: postId as Id<"posts"> });
+          } catch (error) {
+            console.error("Error deleting post:", error);
+          }
+        }}
       />
       <div className="mt-8 bg-card p-5 rounded-lg border">
         <Comments postId={typedPostId} postOwnerId={post.authorId} />

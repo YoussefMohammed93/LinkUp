@@ -515,7 +515,7 @@ export function Post({ post, onDelete }: PostProps) {
               </div>
             )}
           </Link>
-          {sharedPostId && !sharedPost && (
+          {sharedPostId && sharedPost === undefined && (
             <div className="p-3 border rounded-md bg-card dark:bg-[#252728]">
               <div className="flex items-center gap-2">
                 <Skeleton className="w-10 h-10 dark:bg-card/50 rounded-full" />
@@ -530,6 +530,13 @@ export function Post({ post, onDelete }: PostProps) {
               <div className="mt-2">
                 <Skeleton className="w-full h-[80px] dark:bg-card/50 rounded-md" />
               </div>
+            </div>
+          )}
+          {sharedPostId && sharedPost === null && (
+            <div className="p-3 border rounded-md bg-card dark:bg-[#252728]">
+              <p className="text-center text-muted-foreground">
+                Post not available
+              </p>
             </div>
           )}
           {sharedPostId && sharedPost && (

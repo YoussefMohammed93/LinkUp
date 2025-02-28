@@ -464,7 +464,7 @@ export default function Comments({ postId, postOwnerId }: CommentsProps) {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2">
             <span className="ml-2 font-medium text-xs text-muted-foreground">
               {formatTimeAgo(new Date(comment.createdAt))}
             </span>

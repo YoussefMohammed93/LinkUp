@@ -57,11 +57,8 @@ export const getPostById = query({
   args: { postId: v.id("posts") },
   handler: async (ctx, { postId }) => {
     const post = await ctx.db.get(postId);
-    if (!post) {
-      throw new Error("Post not found.");
-    }
 
-    return post;
+    return post || null;
   },
 });
 
