@@ -363,3 +363,65 @@ export const getStoryViewsList = query({
     return views;
   },
 });
+
+export const getActiveStoriesByUser = query({
+  args: { authorId: v.id("users") },
+  async handler(ctx, { authorId }) {
+    const now = Date.now();
+
+    const stories = await ctx.db
+      .query("stories")
+      .withIndex("byAuthor", (q) => q.eq("authorId", authorId))
+      .filter((q) => q.gt(q.field("expiresAt"), now))
+      .collect();
+
+    const storiesWithAuthorInfo = await Promise.all(
+      stories.map(async (story) => {
+        const author = await ctx.db.get(story.authorId);
+        return {
+          ...story,
+          authorName: author
+            ? `${author.firstName ?? ""} ${author.lastName ?? ""}`.trim()
+            : "",
+          authorAvatar: author?.imageUrl || "/avatar-placeholder.png",
+        };
+      })
+    );
+
+    storiesWithAuthorInfo.sort((a, b) => b.createdAt - a.createdAt);
+
+    return storiesWithAuthorInfo;
+  },
+});
+
+export const hasViewedAllStories = query({
+  args: { authorId: v.id("users") },
+  async handler(ctx, { authorId }) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return false;
+
+    const user = await userByClerkUserId(ctx, identity.subject);
+    if (!user) return false;
+
+    const now = Date.now();
+
+    const stories = await ctx.db
+      .query("stories")
+      .withIndex("byAuthor", (q) => q.eq("authorId", authorId))
+      .filter((q) => q.gt(q.field("expiresAt"), now))
+      .collect();
+
+    if (stories.length === 0) return false;
+
+    for (const story of stories) {
+      const view = await ctx.db
+        .query("storyViews")
+        .withIndex("byStoryUser", (q) => q.eq("storyId", story._id))
+        .filter((q) => q.eq(q.field("userId"), user._id))
+        .unique();
+
+      if (!view) return false;
+    }
+    return true;
+  },
+});

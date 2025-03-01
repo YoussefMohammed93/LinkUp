@@ -36,10 +36,11 @@ function StoryThumbnail({
   onClick: () => void;
 }) {
   const newestStory = group[0];
-  const hasViewed = useQuery(api.stories.hasViewed, {
-    storyId: newestStory._id,
-  });
-  const avatarBorderClass = hasViewed
+  const allViewed =
+    useQuery(api.stories.hasViewedAllStories, {
+      authorId: newestStory.authorId,
+    }) || false;
+  const avatarBorderClass = allViewed
     ? "border-gray-400"
     : "border-emerald-500";
 
@@ -50,7 +51,7 @@ function StoryThumbnail({
     >
       {newestStory.imageUrls && newestStory.imageUrls.length ? (
         <Image
-          src={newestStory.imageUrls[0]}
+          src={newestStory.imageUrls[0] || ""}
           alt={group[0]?.authorName || "Story"}
           fill
           className="object-cover"
@@ -90,12 +91,12 @@ export function StoryRow() {
   if (currentUser === undefined || storiesData == null) {
     return (
       <div className="flex items-center space-x-3 overflow-x-auto w-full">
-        <Skeleton className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card" />
-        <Skeleton className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card" />
-        <Skeleton className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card" />
-        <Skeleton className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card" />
-        <Skeleton className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card" />
-        <Skeleton className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card" />
+        {Array.from({ length: 6 }).map((_, idx) => (
+          <Skeleton
+            key={idx}
+            className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card"
+          />
+        ))}
       </div>
     );
   }
@@ -121,6 +122,7 @@ export function StoryRow() {
   const myStoryGroup = currentUser
     ? groupedStories[currentUser._id.toString()] || []
     : [];
+    
   const otherStoryGroups = Object.entries(groupedStories)
     .filter(([authorId]) =>
       currentUser ? authorId !== currentUser._id.toString() : true

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import React, { useState, useRef } from "react";
 import { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
+import StoryViewer from "@/components/story-viewer";
 import { useQuery, useMutation } from "convex/react";
 import { Edit, Loader2, Upload } from "lucide-react";
 import PeopleSidebar from "@/components/people-sidebar";
@@ -21,25 +22,32 @@ import { ConfirmBlockDialog } from "@/components/confirm-block-dialog";
 function playAudio() {
   const audio = document.createElement("audio");
   const sourceM4a = document.createElement("source");
-
   sourceM4a.src = "/audio.m4a";
   sourceM4a.type = "audio/mp4";
   audio.appendChild(sourceM4a);
-
   const sourceMp3 = document.createElement("source");
   sourceMp3.src = "/audio.mp3";
   sourceMp3.type = "audio/mpeg";
   audio.appendChild(sourceMp3);
-
   audio.play().catch((err) => console.error("Audio playback failed:", err));
 }
 
 function formatCount(count: number): string {
-  if (count >= 1000) {
-    return (count / 1000).toFixed(1) + "K";
-  }
+  if (count >= 1000) return (count / 1000).toFixed(1) + "K";
   return count.toString();
 }
+
+export type StoryDoc = {
+  _id: Id<"stories">;
+  _creationTime: number;
+  content?: string;
+  imageUrls?: string[];
+  authorName: string;
+  authorAvatar: string;
+  authorId: Id<"users">;
+  createdAt: Date;
+  expiresAt: Date;
+};
 
 export default function UserPage() {
   const { edgestore } = useEdgeStore();
@@ -49,6 +57,7 @@ export default function UserPage() {
   const user = useQuery(api.users.getUserById, { id: userId as Id<"users"> });
   const currentUser = useQuery(api.users.currentUser);
   const isOwner = currentUser && user && currentUser._id === user._id;
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const isFollowing = useQuery(
     api.follows.isFollowing,
@@ -63,6 +72,40 @@ export default function UserPage() {
       ? { followerId: user._id, followingId: currentUser._id }
       : "skip"
   );
+
+  const isFriend = Boolean(
+    currentUser && user && isFollowing === true && isFollowedBy === true
+  );
+
+  const activeStoriesRaw =
+    useQuery(
+      api.stories.getActiveStoriesByUser,
+      user ? { authorId: user._id } : "skip"
+    ) || [];
+
+  const activeStories = Array.isArray(activeStoriesRaw)
+    ? activeStoriesRaw.map((story) => ({
+        ...story,
+        createdAt: new Date(story.createdAt),
+        expiresAt: new Date(story.expiresAt),
+      }))
+    : [];
+
+  const hasActiveStory = activeStories.length > 0;
+
+  const allStoriesViewed =
+    useQuery(
+      api.stories.hasViewedAllStories,
+      user ? { authorId: user._id } : "skip"
+    ) || false;
+
+  const profileBorderClass = hasActiveStory
+    ? allStoriesViewed
+      ? "border-gray-400"
+      : "border-emerald-500"
+    : "border-card";
+
+  const [profileStoryViewerOpen, setProfileStoryViewerOpen] = useState(false);
 
   const followersCount = useQuery(
     api.follows.getFollowersCount,
@@ -84,7 +127,6 @@ export default function UserPage() {
   const isBlocked = user
     ? blockedList.some((b: { blockedId: string }) => b.blockedId === user._id)
     : false;
-
   const isBlockedByProfile = useQuery(
     api.blocks.isBlockedBy,
     currentUser && user
@@ -97,16 +139,18 @@ export default function UserPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [avatarLoading, setAvatarLoading] = useState(true);
   const [isCoverSelectOpen, setIsCoverSelectOpen] = useState(false);
-
-  const audioRef = useRef<HTMLAudioElement>(null);
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
   const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
 
-  const isFriend = Boolean(
-    currentUser && user && isFollowing === true && isFollowedBy === true
+  const userPosts = useQuery(
+    api.posts.getUserPosts,
+    user
+      ? { userId: user._id, includeFriendsPosts: isOwner ? true : isFriend }
+      : "skip"
   );
-
-  const includeFriendsPosts = isOwner ? true : isFriend;
+  const handleDeletePost = async (postId: string) => {
+    console.log("Deleting post:", postId);
+  };
 
   const handleToggleFollow = async () => {
     try {
@@ -153,13 +197,9 @@ export default function UserPage() {
           setUploadProgress(progress);
         },
       });
-
       await updateUser({
-        updates: {
-          [type === "cover" ? "coverImageUrl" : "imageUrl"]: res.url,
-        },
+        updates: { [type === "cover" ? "coverImageUrl" : "imageUrl"]: res.url },
       });
-
       toast.success(
         `${type.charAt(0).toUpperCase() + type.slice(1)} image updated!`
       );
@@ -173,15 +213,6 @@ export default function UserPage() {
       setIsUploading(false);
       setUploadProgress(0);
     }
-  };
-
-  const userPosts = useQuery(api.posts.getUserPosts, {
-    userId: user?._id as Id<"users">,
-    includeFriendsPosts,
-  });
-
-  const handleDeletePost = async (postId: string) => {
-    console.log("Deleting post:", postId);
   };
 
   return (
@@ -243,7 +274,22 @@ export default function UserPage() {
           </div>
           <div className="px-5">
             <div className="relative inline-block -mt-20 sm:-mt-28 z-10">
-              <div className="relative h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 flex items-center justify-center rounded-full border-4 border-card bg-muted group">
+              <div
+                className={`relative h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 flex items-center justify-center rounded-full border-4 ${
+                  hasActiveStory && (isOwner || isFriend)
+                    ? profileBorderClass
+                    : "border-card"
+                } bg-muted group cursor-${
+                  hasActiveStory && (isOwner || isFriend)
+                    ? "pointer"
+                    : "default"
+                }`}
+                onClick={() => {
+                  if (hasActiveStory && (isOwner || isFriend)) {
+                    setProfileStoryViewerOpen(true);
+                  }
+                }}
+              >
                 {user ? (
                   user.imageUrl ? (
                     <>
@@ -658,6 +704,15 @@ export default function UserPage() {
         isOpen={isCoverSelectOpen}
         onOpenChange={setIsCoverSelectOpen}
       />
+      {hasActiveStory && (
+        <StoryViewer
+          open={profileStoryViewerOpen}
+          onOpenChange={(open) => {
+            setProfileStoryViewerOpen(open);
+          }}
+          stories={activeStories}
+        />
+      )}
     </>
   );
 }

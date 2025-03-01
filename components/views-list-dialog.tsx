@@ -73,7 +73,7 @@ export default function ViewsListDialog({
             </>
           )}
         </div>
-        <DialogFooter className="p-4 pt-0">
+        <DialogFooter className="p-4 pt-3 sm:pt-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
@@ -87,6 +87,7 @@ function ViewItem({ view }: { view: StoryView }) {
   const user = useQuery(api.users.getUserById, {
     id: view.userId as Id<"users">,
   });
+
   return (
     <div className="flex items-center space-x-4 py-2 border-b last:border-none last:pb-0">
       <Link

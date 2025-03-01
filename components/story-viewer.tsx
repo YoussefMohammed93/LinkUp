@@ -200,7 +200,7 @@ export default function StoryViewer({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="p-0 bg-black border-none max-w-[340px] w-full h-screen sm:h-[95vh] md:w-[700px]">
+        <DialogContent className="p-0 bg-black border-none max-w-[340px] w-full h-[90vh] sm:h-[95vh] md:w-[700px]">
           <div className="hidden">
             <DialogTitle>
               {currentStory?.authorName || "Story Viewer"}
@@ -290,7 +290,7 @@ export default function StoryViewer({
                     src={mediaUrl}
                     alt={currentStory?.authorName || "Story"}
                     fill
-                    className="w-full h-full object-cover rounded-lg"
+                    className="w-full h-full object-contain rounded-lg"
                   />
                 )
               ) : (
@@ -301,13 +301,13 @@ export default function StoryViewer({
                 </div>
               )}
               {!isPlaying && mediaUrl && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-lg">
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center rounded-lg">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-white hover:text-white w-16 h-16 hover:bg-white/10"
+                    className="bg-white/10 text-white hover:text-white border-none hover:bg-white/20"
                   >
-                    <Play className="w-8 h-8 fill-current" />
+                    <Play className="w-5 h-5 fill-current" />
                   </Button>
                 </div>
               )}
@@ -317,7 +317,7 @@ export default function StoryViewer({
                 variant="outline"
                 size="icon"
                 onClick={goToPrev}
-                className="absolute left-4 sm:-left-16 top-1/2 -translate-y-1/2 hover:text-white bg-white/10 text-white hover:bg-white/20 border-2 dark:border-[#444444]"
+                className="absolute left-4 sm:-left-16 top-3/4 sm:top-1/2 -translate-y-1/2 hover:text-white bg-white/10 text-white hover:bg-white/20 border-2 dark:border-[#444444]"
               >
                 <ChevronLeft className="w-6 h-6" />
               </Button>
@@ -327,7 +327,7 @@ export default function StoryViewer({
                 variant="outline"
                 size="icon"
                 onClick={goToNext}
-                className="absolute right-4 sm:-right-16 top-1/2 -translate-y-1/2 hover:text-white bg-white/10 text-white hover:bg-white/20 border-2 dark:border-[#444444]"
+                className="absolute right-4 sm:-right-16 top-3/4 sm:top-1/2 -translate-y-1/2 hover:text-white bg-white/10 text-white hover:bg-white/20 border-2 dark:border-[#444444]"
               >
                 <ChevronRight className="w-6 h-6" />
               </Button>
@@ -347,7 +347,7 @@ export default function StoryViewer({
                   className="bg-white/10 text-white hover:text-white border-none hover:bg-white/20"
                   onClick={togglePlay}
                 >
-                  <Pause className="w-6 h-6" />
+                  <Pause className="w-5 h-5" />
                 </Button>
               </div>
             )}
