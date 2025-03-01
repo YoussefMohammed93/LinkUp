@@ -67,6 +67,14 @@ export default function StoryViewer({
 
   const currentStory = stories[currentIndex];
 
+  const addStoryView = useMutation(api.stories.addStoryView);
+
+  useEffect(() => {
+    if (open && currentStory) {
+      addStoryView({ storyId: currentStory._id as Id<"stories"> });
+    }
+  }, [open, currentStory, addStoryView]);
+
   const isMine =
     currentUser && currentStory && currentUser._id === currentStory.authorId;
 

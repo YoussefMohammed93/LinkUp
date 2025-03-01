@@ -27,6 +27,56 @@ export type StoryDoc = {
   expiresAt: Date;
 };
 
+function StoryThumbnail({
+  group,
+  onClick,
+}: {
+  group: StoryDoc[];
+  onClick: () => void;
+}) {
+  const newestStory = group[0];
+
+  const hasViewed = useQuery(api.stories.hasViewed, {
+    storyId: newestStory._id,
+  });
+  const avatarBorderClass = hasViewed
+    ? "border-gray-400"
+    : "border-emerald-500";
+
+  return (
+    <div
+      onClick={onClick}
+      className="relative w-24 h-40 flex-shrink-0 cursor-pointer rounded-xl overflow-hidden"
+    >
+      {newestStory.imageUrls && newestStory.imageUrls.length ? (
+        <Image
+          src={newestStory.imageUrls[0]}
+          alt={group[0]?.authorName || "Story"}
+          fill
+          className="object-cover"
+        />
+      ) : (
+        <div className="bg-primary/90 w-full h-full flex items-center justify-center p-2">
+          <p className="text-white text-center">{newestStory.content}</p>
+        </div>
+      )}
+      <div
+        className={`absolute top-2 left-2 w-10 h-10 rounded-full border-4 ${avatarBorderClass} overflow-hidden`}
+      >
+        <Image
+          src={group[0]?.authorAvatar || "/avatar-placeholder.png"}
+          alt="Author avatar"
+          fill
+          className="object-cover"
+        />
+      </div>
+      <div className="absolute bottom-2 left-2 text-xs font-semibold text-white truncate max-w-[80%]">
+        {group[0]?.authorName}
+      </div>
+    </div>
+  );
+}
+
 export function StoryRow() {
   const currentUser = useQuery(api.users.currentUser);
   const storiesRaw = (useQuery(api.stories.getActiveFriendStories) || []).map(
@@ -97,61 +147,17 @@ export function StoryRow() {
         </DialogContent>
       </Dialog>
       {myStoryGroup.length > 0 && (
-        <div
-          className="relative w-24 h-40 flex-shrink-0 cursor-pointer rounded-xl overflow-hidden"
+        <StoryThumbnail
+          group={myStoryGroup}
           onClick={() => handleGroupClick(myStoryGroup)}
-        >
-          {myStoryGroup[myStoryGroup.length - 1]?.imageUrls?.length ? (
-            <Image
-              src={myStoryGroup[myStoryGroup.length - 1].imageUrls![0]}
-              alt={myStoryGroup[0]?.authorName || "Story"}
-              fill
-              className="object-cover"
-            />
-          ) : (
-            <div className="bg-black w-full h-full" />
-          )}
-          <div className="absolute top-2 left-2 w-10 h-10 rounded-full border-4 border-blue-500 overflow-hidden">
-            <Image
-              src={myStoryGroup[0]?.authorAvatar || "/avatar-placeholder.png"}
-              alt="Author avatar"
-              fill
-              className="object-cover"
-            />
-          </div>
-          <div className="absolute bottom-2 left-2 text-sm font-semibold text-white">
-            {myStoryGroup[0]?.authorName}
-          </div>
-        </div>
+        />
       )}
       {otherStoryGroups.map((group) => (
-        <div
+        <StoryThumbnail
           key={group[0]?._id.toString()}
-          className="relative w-24 h-40 flex-shrink-0 cursor-pointer rounded-xl overflow-hidden"
+          group={group}
           onClick={() => handleGroupClick(group)}
-        >
-          {group[group.length - 1]?.imageUrls?.length ? (
-            <Image
-              src={group[group.length - 1].imageUrls![0]}
-              alt={group[0]?.authorName || "Story"}
-              fill
-              className="object-cover"
-            />
-          ) : (
-            <div className="bg-black w-full h-full" />
-          )}
-          <div className="absolute top-2 left-2 w-10 h-10 rounded-full border-4 border-blue-500 overflow-hidden">
-            <Image
-              src={group[0]?.authorAvatar || "/avatar-placeholder.png"}
-              alt="Author avatar"
-              fill
-              className="object-cover"
-            />
-          </div>
-          <div className="absolute bottom-2 left-2 text-sm font-semibold text-white">
-            {group[0]?.authorName}
-          </div>
-        </div>
+        />
       ))}
       <StoryViewer
         open={viewerOpen}

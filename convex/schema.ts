@@ -113,7 +113,9 @@ export default defineSchema({
     storyId: v.id("stories"),
     userId: v.id("users"),
     viewedAt: v.number(),
+    hasViewed: v.boolean(),
   })
+    .index("byStoryUser", ["storyId", "userId"])
     .index("byStory", ["storyId"])
     .index("byUser", ["userId"]),
 });

@@ -130,22 +130,61 @@ export const getStoryViewCount = query({
   },
 });
 
+export const addStoryView = mutation({
+  args: { storyId: v.id("stories") },
+  async handler(ctx, { storyId }) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const user = await userByClerkUserId(ctx, identity.subject);
+    if (!user) throw new Error("User not found");
+
+    const story = await ctx.db.get(storyId);
+    if (!story) throw new Error("Story not found");
+
+    if (story.authorId === user._id) {
+      return { success: true };
+    }
+
+    const existingView = await ctx.db
+      .query("storyViews")
+      .withIndex("byStoryUser", (q) => q.eq("storyId", storyId))
+      .filter((q) => q.eq(q.field("userId"), user._id))
+      .unique();
+
+    if (!existingView) {
+      await ctx.db.insert("storyViews", {
+        storyId,
+        userId: user._id,
+        viewedAt: Date.now(),
+        hasViewed: true,
+      });
+    }
+    return { success: true };
+  },
+});
+
 export const hasViewed = query({
   args: { storyId: v.id("stories") },
   async handler(ctx, { storyId }) {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return false;
 
-    const userId = identity.subject as Id<"users">;
+    const user = await userByClerkUserId(ctx, identity.subject);
+    if (!user) return false;
+
+    const story = await ctx.db.get(storyId);
+    if (!story) return false;
+
+    if (story.authorId === user._id) return true;
 
     const view = await ctx.db
       .query("storyViews")
-      .filter((q) =>
-        q.and(q.eq("storyId", storyId as any), q.eq("userId", userId as any))
-      )
+      .withIndex("byStoryUser", (q) => q.eq("storyId", storyId))
+      .filter((q) => q.eq(q.field("userId"), user._id))
       .unique();
 
-    return view !== null;
+    return view ? view.hasViewed === true : false;
   },
 });
 
@@ -227,5 +266,89 @@ export const getActiveFriendStories = query({
         authorAvatar,
       };
     });
+  },
+});
+
+export const getOrderedActiveFriendStories = query({
+  args: {},
+  async handler(ctx) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    const currentUser = await userByClerkUserId(ctx, identity.subject);
+    if (!currentUser) throw new Error("User not found");
+
+    const now = Date.now();
+    const activeStories = await ctx.db
+      .query("stories")
+      .filter((q) => q.gt(q.field("expiresAt"), now))
+      .collect();
+
+    const followingRecords = await ctx.db
+      .query("follows")
+      .withIndex("byFollower", (q) => q.eq("followerId", currentUser._id))
+      .collect();
+    const followingSet = new Set(
+      followingRecords.map((r) => r.followingId.toString())
+    );
+
+    const followerRecords = await ctx.db
+      .query("follows")
+      .withIndex("byFollowing", (q) => q.eq("followingId", currentUser._id))
+      .collect();
+    const followersSet = new Set(
+      followerRecords.map((r) => r.followerId.toString())
+    );
+
+    const friendStories = activeStories.filter((story) => {
+      const authorStr = story.authorId.toString();
+      return (
+        authorStr === currentUser._id.toString() ||
+        (followingSet.has(authorStr) && followersSet.has(authorStr))
+      );
+    });
+
+    const groupsMap = new Map<string, any[]>();
+    for (const story of friendStories) {
+      const key = story.authorId.toString();
+      if (!groupsMap.has(key)) groupsMap.set(key, []);
+      groupsMap.get(key)?.push(story);
+    }
+
+    const groups = Array.from(groupsMap.values()).map((group) => {
+      group.sort((a, b) => b.createdAt - a.createdAt);
+      return group;
+    });
+
+    const groupsWithStatus = await Promise.all(
+      groups.map(async (group) => {
+        const newestStory = group[0];
+        let isSeen = false;
+        if (newestStory.authorId.toString() === currentUser._id.toString()) {
+          isSeen = true;
+        } else {
+          const view = await ctx.db
+            .query("storyViews")
+            .withIndex("byStoryUser", (q) => q.eq("storyId", newestStory._id))
+            .filter((q) => q.eq(q.field("userId"), currentUser._id))
+            .unique();
+          isSeen = !!view;
+        }
+        return {
+          group,
+          newestCreation: newestStory.createdAt,
+          isSeen,
+        };
+      })
+    );
+
+    groupsWithStatus.sort((a, b) => {
+      if (a.isSeen === b.isSeen) {
+        return b.newestCreation - a.newestCreation;
+      }
+      return a.isSeen ? 1 : -1;
+    });
+
+    return groupsWithStatus.map((item) => item.group);
   },
 });
