@@ -352,3 +352,14 @@ export const getOrderedActiveFriendStories = query({
     return groupsWithStatus.map((item) => item.group);
   },
 });
+
+export const getStoryViewsList = query({
+  args: { storyId: v.id("stories") },
+  async handler(ctx, { storyId }) {
+    const views = await ctx.db
+      .query("storyViews")
+      .withIndex("byStory", (q) => q.eq("storyId", storyId))
+      .collect();
+    return views;
+  },
+});

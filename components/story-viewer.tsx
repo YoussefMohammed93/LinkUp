@@ -20,6 +20,7 @@ import {
 import { api } from "@/convex/_generated/api";
 import ExpandableText from "./expandable-text";
 import { Button } from "@/components/ui/button";
+import ViewsListDialog from "./views-list-dialog";
 import { Id } from "@/convex/_generated/dataModel";
 import { useEffect, useState, useRef } from "react";
 import { useQuery, useMutation } from "convex/react";
@@ -59,15 +60,14 @@ export default function StoryViewer({
   const [isPlaying, setIsPlaying] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [viewsDialogOpen, setViewsDialogOpen] = useState(false);
 
   const currentUser = useQuery(api.users.currentUser);
   const deleteStoryMutation = useMutation(api.stories.deleteStory);
+  const addStoryView = useMutation(api.stories.addStoryView);
 
   const currentStory = stories[currentIndex];
-
-  const addStoryView = useMutation(api.stories.addStoryView);
 
   useEffect(() => {
     if (open && currentStory) {
@@ -82,6 +82,16 @@ export default function StoryViewer({
     api.stories.getStoryViewCount,
     currentStory ? { storyId: currentStory._id as Id<"stories"> } : "skip"
   );
+
+  useEffect(() => {
+    if (viewsDialogOpen) {
+      setIsPlaying(false);
+    } else {
+      if (open) {
+        setIsPlaying(true);
+      }
+    }
+  }, [viewsDialogOpen, open]);
 
   useEffect(() => {
     if (!deleteConfirmOpen && !isDeleting && open) {
@@ -190,7 +200,7 @@ export default function StoryViewer({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="p-0 bg-black border-none max-w-none w-full h-screen sm:h-[95vh] md:w-[700px]">
+        <DialogContent className="p-0 bg-black border-none max-w-[340px] w-full h-screen sm:h-[95vh] md:w-[700px]">
           <div className="hidden">
             <DialogTitle>
               {currentStory?.authorName || "Story Viewer"}
@@ -226,8 +236,8 @@ export default function StoryViewer({
                 height={44}
                 className="w-11 h-11 rounded-full border-white"
               />
-              <div className="flex-1">
-                <div className="text-white font-semibold">
+              <div className="flex-1 min-w-0">
+                <div className="text-white font-semibold truncate">
                   {currentStory?.authorName}
                 </div>
                 <div className="text-xs text-white/80">
@@ -241,6 +251,7 @@ export default function StoryViewer({
                   <Button
                     variant="ghost"
                     className="text-xs bg-black/50 hover:bg-black/60"
+                    onClick={() => setViewsDialogOpen(true)}
                   >
                     <Eye className="w-5 h-5 text-white" />
                     <span className="text-white">{viewCount ?? 0}</span>
@@ -284,7 +295,7 @@ export default function StoryViewer({
                 )
               ) : (
                 <div className="bg-primary text-primary-foreground p-8 rounded-lg max-w-[80%]">
-                  <p className="text-center text-xl text-white">
+                  <p className="text-center text-lg text-white max-h-[500px] overflow-auto">
                     {currentStory?.content}
                   </p>
                 </div>
@@ -306,7 +317,7 @@ export default function StoryViewer({
                 variant="outline"
                 size="icon"
                 onClick={goToPrev}
-                className="absolute -left-16 top-1/2 -translate-y-1/2 hover:text-white bg-white/10 text-white hover:bg-white/20 border-2 dark:border-[#444444]"
+                className="absolute left-4 sm:-left-16 top-1/2 -translate-y-1/2 hover:text-white bg-white/10 text-white hover:bg-white/20 border-2 dark:border-[#444444]"
               >
                 <ChevronLeft className="w-6 h-6" />
               </Button>
@@ -316,7 +327,7 @@ export default function StoryViewer({
                 variant="outline"
                 size="icon"
                 onClick={goToNext}
-                className="absolute -right-16 top-1/2 -translate-y-1/2 hover:text-white bg-white/10 text-white hover:bg-white/20 border-2 dark:border-[#444444]"
+                className="absolute right-4 sm:-right-16 top-1/2 -translate-y-1/2 hover:text-white bg-white/10 text-white hover:bg-white/20 border-2 dark:border-[#444444]"
               >
                 <ChevronRight className="w-6 h-6" />
               </Button>
@@ -333,7 +344,7 @@ export default function StoryViewer({
                 <Button
                   variant="outline"
                   size="icon"
-                  className="bg-white/10 text-white border-none hover:bg-white/20"
+                  className="bg-white/10 text-white hover:text-white border-none hover:bg-white/20"
                   onClick={togglePlay}
                 >
                   <Pause className="w-6 h-6" />
@@ -344,8 +355,8 @@ export default function StoryViewer({
         </DialogContent>
       </Dialog>
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent className="p-4">
-          <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent className="p-4" style={{ maxWidth: "340px" }}>
+          <DialogTitle className="pt-2">Confirm Deletion</DialogTitle>
           <DialogDescription>
             Are you sure you want to delete this story?
           </DialogDescription>
@@ -374,6 +385,13 @@ export default function StoryViewer({
           </div>
         </DialogContent>
       </Dialog>
+      {currentStory && (
+        <ViewsListDialog
+          open={viewsDialogOpen}
+          onOpenChange={setViewsDialogOpen}
+          storyId={currentStory._id as Id<"stories">}
+        />
+      )}
       <style jsx global>{`
         .lucide.lucide-x.size-5 {
           display: none;

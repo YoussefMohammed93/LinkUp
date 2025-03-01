@@ -14,6 +14,7 @@ import { PlusCircle } from "lucide-react";
 import StoryCreator from "./story-creator";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type StoryDoc = {
   _id: Id<"stories">;
@@ -35,7 +36,6 @@ function StoryThumbnail({
   onClick: () => void;
 }) {
   const newestStory = group[0];
-
   const hasViewed = useQuery(api.stories.hasViewed, {
     storyId: newestStory._id,
   });
@@ -57,7 +57,9 @@ function StoryThumbnail({
         />
       ) : (
         <div className="bg-primary/90 w-full h-full flex items-center justify-center p-2">
-          <p className="text-white text-center">{newestStory.content}</p>
+          <p className="text-xs text-white text-center max-h-24 overflow-hidden pt-5">
+            {newestStory.content}
+          </p>
         </div>
       )}
       <div
@@ -79,13 +81,30 @@ function StoryThumbnail({
 
 export function StoryRow() {
   const currentUser = useQuery(api.users.currentUser);
-  const storiesRaw = (useQuery(api.stories.getActiveFriendStories) || []).map(
-    (story) => ({
-      ...story,
-      createdAt: new Date(story.createdAt),
-      expiresAt: new Date(story.expiresAt),
-    })
-  ) as StoryDoc[];
+  const storiesData = useQuery(api.stories.getActiveFriendStories);
+
+  const [openCreator, setOpenCreator] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedStories, setSelectedStories] = useState<StoryDoc[]>([]);
+
+  if (currentUser === undefined || storiesData == null) {
+    return (
+      <div className="flex items-center space-x-3 overflow-x-auto w-full">
+        <Skeleton className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card" />
+        <Skeleton className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card" />
+        <Skeleton className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card" />
+        <Skeleton className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card" />
+        <Skeleton className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card" />
+        <Skeleton className="relative w-24 h-40 flex-shrink-0 rounded-xl bg-card" />
+      </div>
+    );
+  }
+
+  const storiesRaw = storiesData.map((story) => ({
+    ...story,
+    createdAt: new Date(story.createdAt),
+    expiresAt: new Date(story.expiresAt),
+  })) as StoryDoc[];
 
   const groupedStories = storiesRaw.reduce(
     (acc, story) => {
@@ -108,10 +127,6 @@ export function StoryRow() {
     )
     .map(([_, group]) => group);
 
-  const [openCreator, setOpenCreator] = useState(false);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [selectedStories, setSelectedStories] = useState<StoryDoc[]>([]);
-
   const handleGroupClick = (stories: StoryDoc[]) => {
     setSelectedStories(stories);
     setViewerOpen(true);
@@ -129,12 +144,14 @@ export function StoryRow() {
               className="object-cover"
             />
             <div className="absolute inset-0 bg-black/50" />
-            <div className="flex items-center justify-center relative pt-5">
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
               <PlusCircle className="w-8 h-8 text-white" />
             </div>
-            <p className="flex items-center justify-center relative pt-8 text-sm font-semibold text-white">
-              Create story
-            </p>
+            <div className="w-full absolute bottom-1 left-1/2 -translate-x-1/2">
+              <p className="text-sm font-medium text-white text-center">
+                Create story
+              </p>
+            </div>
           </div>
         </DialogTrigger>
         <DialogContent className="p-0 overflow-y-auto max-h-[680px] overflow-x-hidden gap-0 rounded-xl">

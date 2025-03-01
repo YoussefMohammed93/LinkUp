@@ -45,11 +45,6 @@ export default function InfinitePostsList({
           <Loader2 className="animate-spin" />
         </div>
       }
-      endMessage={
-        <p className="text-center py-8 text-muted-foreground">
-          You&apos;re all caught up!
-        </p>
-      }
     >
       <div className="space-y-2">
         {visiblePosts.map((post, index) => (
