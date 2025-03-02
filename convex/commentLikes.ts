@@ -52,7 +52,6 @@ export const reactToComment = mutation({
   },
   handler: async (ctx, { commentId, reaction }) => {
     const user = await getCurrentUser(ctx);
-
     if (!user) {
       throw new Error("Unauthorized: User not found.");
     }
@@ -85,13 +84,16 @@ export const reactToComment = mutation({
     const comment = await ctx.db.get(commentId);
     if (comment && comment.authorId !== user._id) {
       await ctx.db.insert("notifications", {
-        type: "reaction",
+        type: "reaction-comment",
         targetUserId: comment.authorId,
         sender: {
           id: user._id,
           name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
           image: user.imageUrl || "",
         },
+        postId: comment.postId,
+        commentId: comment._id,
+        reaction,
         timestamp: Date.now(),
         read: false,
       });

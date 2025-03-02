@@ -40,6 +40,8 @@ export const addBookmark = mutation({
           name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
           image: user.imageUrl || "",
         },
+
+        postId,
         timestamp: Date.now(),
         read: false,
       });

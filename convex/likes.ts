@@ -84,6 +84,7 @@ export const reactToPost = mutation({
           image: user.imageUrl || "",
         },
         reaction,
+        postId,
         timestamp: Date.now(),
         read: false,
       });

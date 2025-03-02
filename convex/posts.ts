@@ -233,13 +233,11 @@ export const sharePost = mutation({
   },
   handler: async (ctx, { postId, content, visibility }) => {
     const user = await getCurrentUser(ctx);
-
     if (!user) {
       throw new Error("Unauthorized: User not found.");
     }
 
     const originalPost = await ctx.db.get(postId);
-
     if (!originalPost) {
       throw new Error("Cannot share a post that doesn't exist.");
     }
@@ -248,7 +246,7 @@ export const sharePost = mutation({
       ? originalPost.sharedPostId
       : postId;
 
-    await ctx.db.insert("posts", {
+    const newSharePostId = await ctx.db.insert("posts", {
       content,
       authorId: user._id,
       authorName: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
@@ -258,6 +256,22 @@ export const sharePost = mutation({
       visibility,
       sharedPostId: realOriginalPostId,
     });
+
+    if (originalPost.authorId !== user._id) {
+      await ctx.db.insert("notifications", {
+        type: "share",
+        targetUserId: originalPost.authorId,
+        sender: {
+          id: user._id,
+          name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+          image: user.imageUrl || "",
+        },
+
+        postId: newSharePostId,
+        timestamp: Date.now(),
+        read: false,
+      });
+    }
   },
 });
 
@@ -271,13 +285,17 @@ export const updatePost = mutation({
   },
   handler: async (ctx, { postId, content, images, visibility }) => {
     const user = await getCurrentUser(ctx);
+
     if (!user) {
       throw new Error("Unauthorized: User not found.");
     }
+
     const post = await ctx.db.get(postId);
+
     if (!post) {
       throw new Error("Post not found.");
     }
+
     if (post.authorId !== user._id) {
       throw new Error("Unauthorized: Only the author can edit this post.");
     }

@@ -125,7 +125,8 @@ export default defineSchema({
       v.literal("comment"),
       v.literal("reaction"),
       v.literal("share"),
-      v.literal("bookmark")
+      v.literal("bookmark"),
+      v.literal("reaction-comment")
     ),
     targetUserId: v.id("users"),
     sender: v.object({
@@ -133,6 +134,8 @@ export default defineSchema({
       name: v.string(),
       image: v.string(),
     }),
+    postId: v.optional(v.id("posts")),
+    commentId: v.optional(v.id("comments")),
     reaction: v.optional(
       v.union(
         v.literal("like"),

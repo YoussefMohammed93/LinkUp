@@ -4,21 +4,27 @@ import { mutation, query } from "./_generated/server";
 
 // Mutation to create a new comment
 export const createComment = mutation({
-  args: { postId: v.id("posts"), content: v.string() },
-  handler: async (ctx, { postId, content }) => {
+  args: {
+    content: v.string(),
+    postId: v.id("posts"),
+  },
+  handler: async (ctx, { content, postId }) => {
     const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized: User not found");
+    if (!user) throw new Error("Unauthorized: User not found.");
 
-    const comment = await ctx.db.insert("comments", {
+    const post = await ctx.db.get(postId);
+    if (!post) throw new Error("Post not found.");
+
+    const comment = {
       content,
       authorId: user._id,
       postId,
       createdAt: Date.now(),
-    });
+    };
 
-    const post = await ctx.db.get(postId);
+    await ctx.db.insert("comments", comment);
 
-    if (post && post.authorId !== user._id) {
+    if (post.authorId !== user._id) {
       await ctx.db.insert("notifications", {
         type: "comment",
         targetUserId: post.authorId,
@@ -27,12 +33,11 @@ export const createComment = mutation({
           name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
           image: user.imageUrl || "",
         },
+        postId,
         timestamp: Date.now(),
         read: false,
       });
     }
-
-    return comment;
   },
 });
 

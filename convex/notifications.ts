@@ -9,7 +9,7 @@ export const getNotificationsForUser = query({
     const currentUser = await getCurrentUser(ctx);
 
     if (!currentUser) {
-      throw new Error("Unauthorized: User not found.");
+      return [];
     }
 
     return await ctx.db
@@ -57,10 +57,11 @@ export const createNotification = mutation({
     senderId: v.id("users"),
     senderName: v.string(),
     senderImage: v.string(),
+    postId: v.optional(v.id("posts")),
   },
   handler: async (
     ctx,
-    { type, targetUserId, senderId, senderName, senderImage }
+    { type, targetUserId, senderId, senderName, senderImage, postId }
   ) => {
     await ctx.db.insert("notifications", {
       type,
@@ -70,6 +71,7 @@ export const createNotification = mutation({
         name: senderName,
         image: senderImage,
       },
+      postId,
       timestamp: Date.now(),
       read: false,
     });

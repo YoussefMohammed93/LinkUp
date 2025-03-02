@@ -1,8 +1,5 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   UserPlus,
   MessageCircle,
@@ -10,18 +7,22 @@ import {
   Bookmark,
   Circle,
 } from "lucide-react";
+import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { useQuery, useMutation } from "convex/react";
+import { Card } from "@/components/ui/card";
 import { api } from "@/convex/_generated/api";
+import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery, useMutation } from "convex/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-// Define the Notification type based on your backend structure.
-// Notice that for reaction notifications we also include the reaction type.
 type NotificationType =
   | "follow"
   | "comment"
   | "reaction"
+  | "reaction-comment"
   | "share"
   | "bookmark";
 
@@ -34,19 +35,18 @@ interface Notification {
     name: string;
     image: string;
   };
+  postId?: string;
+  commentId?: string;
   timestamp: number;
   read: boolean;
-  // Only applicable for reaction notifications:
   reaction?: "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry";
 }
 
-// Helper to get the proper icon for a notification.
-// For reaction notifications, return the corresponding reaction image.
 const getNotificationIcon = (
   type: NotificationType,
   reaction?: "like" | "love" | "care" | "haha" | "wow" | "sad" | "angry"
 ) => {
-  if (type === "reaction") {
+  if (type === "reaction" || type === "reaction-comment") {
     switch (reaction) {
       case "like":
         return (
@@ -97,8 +97,6 @@ const getNotificationIcon = (
   }
 };
 
-// Helper to generate a message for the notification.
-// For "reaction" notifications we use the specific reaction type.
 const getNotificationText = (
   type: NotificationType,
   senderName: string,
@@ -125,6 +123,22 @@ const getNotificationText = (
           : "reacted to";
       return `${senderName} ${verb} your post`;
     }
+    case "reaction-comment": {
+      const reactionVerbs: Record<string, string> = {
+        like: "liked",
+        love: "loved",
+        care: "cared for",
+        haha: "laughed at",
+        wow: "was amazed by",
+        sad: "felt sad about",
+        angry: "got angry at",
+      };
+      const verb =
+        reaction && reactionVerbs[reaction]
+          ? reactionVerbs[reaction]
+          : "reacted to";
+      return `${senderName} ${verb} your comment`;
+    }
     case "share":
       return `${senderName} shared your post`;
     case "bookmark":
@@ -134,7 +148,6 @@ const getNotificationText = (
   }
 };
 
-// Helper to format timestamps as relative time strings.
 function formatRelativeTime(timestamp: number): string {
   const secondsAgo = Math.floor((Date.now() - timestamp) / 1000);
   if (secondsAgo < 60) return `${secondsAgo}s ago`;
@@ -148,7 +161,18 @@ function formatRelativeTime(timestamp: number): string {
   return `${months}mo ago`;
 }
 
-// Component for rendering a single notification.
+function NotificationSkeleton() {
+  return (
+    <div className="flex items-start gap-4 my-3 last:mb-0 p-4 border rounded-xl">
+      <Skeleton className="w-12 h-12 rounded-full" />
+      <div className="flex-1 space-y-2">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+      </div>
+    </div>
+  );
+}
+
 function NotificationItem({
   notification,
   markAsRead,
@@ -156,55 +180,74 @@ function NotificationItem({
   notification: Notification;
   markAsRead: (id: string) => void;
 }) {
+  let linkHref = "#";
+  if (notification.type === "follow") {
+    linkHref = `/users/${notification.sender.id}`;
+  } else if (
+    notification.type === "reaction-comment" &&
+    notification.commentId
+  ) {
+    linkHref = `/posts/${notification.postId}`;
+  } else if (notification.postId) {
+    linkHref = `/posts/${notification.postId}`;
+  }
+
   return (
-    <div
-      className={cn(
-        "flex items-start gap-4 p-4 border rounded-xl hover:bg-accent",
-        !notification.read ? "bg-accent" : "bg-card"
-      )}
+    <Link
+      href={linkHref}
+      onClick={() => {
+        if (!notification.read) markAsRead(notification._id);
+      }}
     >
-      <Avatar className="w-12 h-12">
-        <AvatarImage src={notification.sender.image} />
-        <AvatarFallback>{notification.sender.name[0]}</AvatarFallback>
-      </Avatar>
-      <div className="flex-1">
-        <div className="flex items-center gap-2 relative">
-          {/* Fixed width container for the icon */}
-          <div className="w-8 flex-shrink-0 flex items-center justify-center">
-            {getNotificationIcon(notification.type, notification.reaction)}
+      <div
+        className={cn(
+          "flex items-start gap-4 my-3 last:mb-0 p-4 border rounded-xl hover:bg-accent cursor-pointer",
+          !notification.read ? "bg-accent" : "bg-card"
+        )}
+      >
+        <Avatar className="w-12 h-12">
+          <AvatarImage src={notification.sender.image} />
+          <AvatarFallback>{notification.sender.name[0]}</AvatarFallback>
+        </Avatar>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <div className="w-8 flex-shrink-0 flex items-center justify-center">
+              {getNotificationIcon(notification.type, notification.reaction)}
+            </div>
+            <p className="text-base font-medium text-foreground">
+              {getNotificationText(
+                notification.type,
+                notification.sender.name,
+                notification.reaction
+              )}
+            </p>
           </div>
-          <p className="text-base font-medium text-foreground">
-            {getNotificationText(
-              notification.type,
-              notification.sender.name,
-              notification.reaction
+          <div className="flex justify-between items-center mt-2">
+            <p className="text-sm text-muted-foreground">
+              {formatRelativeTime(notification.timestamp)}
+            </p>
+            {!notification.read && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  markAsRead(notification._id);
+                }}
+                className="text-sm"
+              >
+                Mark as read
+              </Button>
             )}
-          </p>
-        </div>
-        <div className="flex justify-between items-center mt-2">
-          <p className="text-sm text-muted-foreground">
-            {formatRelativeTime(notification.timestamp)}
-          </p>
-          {!notification.read && (
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => markAsRead(notification._id)}
-              className="text-sm"
-            >
-              Mark as read
-            </Button>
-          )}
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
 export function NotificationsList() {
-  // Fetch dynamic notifications from Convex.
-  const notifications =
-    useQuery(api.notifications.getNotificationsForUser) || [];
+  const notifications = useQuery(api.notifications.getNotificationsForUser);
   const markAllAsReadMutation = useMutation(
     api.notifications.markAllNotificationsAsRead
   );
@@ -230,28 +273,46 @@ export function NotificationsList() {
     }
   };
 
+  if (notifications === undefined) {
+    return (
+      <Card className="p-6 bg-card text-card-foreground shadow-none rounded-xl w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+          <Skeleton className="h-8 w-48 rounded border" />
+          <Skeleton className="h-8 w-32 rounded border" />
+        </div>
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <NotificationSkeleton key={idx} />
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="p-6 bg-card text-card-foreground shadow-none rounded-xl w-full">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <h2 className="text-2xl font-semibold text-foreground">
-          Notifications
-        </h2>
+        <h2 className="text-xl font-bold text-foreground">Notifications</h2>
         <Button
           variant="outline"
           onClick={markAllAsRead}
-          className="text-sm shadow-none hover:bg-accent"
+          className="text-sm shadow-none hover:bg-accent mt-5 sm:mt-0"
         >
           Mark all as read
         </Button>
       </div>
       <div className="space-y-4">
-        {notifications.map((notification: Notification) => (
-          <NotificationItem
-            key={notification._id}
-            notification={notification}
-            markAsRead={markAsRead}
-          />
-        ))}
+        {notifications.length === 0 ? (
+          <p className="text-center text-muted-foreground">No notifications</p>
+        ) : (
+          notifications.map((notification: Notification) => (
+            <NotificationItem
+              key={notification._id}
+              notification={notification}
+              markAsRead={markAsRead}
+            />
+          ))
+        )}
       </div>
     </Card>
   );
