@@ -1,5 +1,6 @@
 import MenuBar from "@/components/menu-bar";
 import { Header } from "@/components/header";
+import { ToastNotifications } from "@/components/toast-notifications";
 
 export default async function Layout({
   children,
@@ -14,6 +15,7 @@ export default async function Layout({
         {children}
       </div>
       <MenuBar className="sticky bottom-0 w-full flex justify-center gap-5 border-t bg-card p-3 sm:hidden" />
+      <ToastNotifications />
     </main>
   );
 }
