@@ -8,12 +8,31 @@ export const createComment = mutation({
   handler: async (ctx, { postId, content }) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Unauthorized: User not found");
-    return await ctx.db.insert("comments", {
+
+    const comment = await ctx.db.insert("comments", {
       content,
       authorId: user._id,
       postId,
       createdAt: Date.now(),
     });
+
+    const post = await ctx.db.get(postId);
+
+    if (post && post.authorId !== user._id) {
+      await ctx.db.insert("notifications", {
+        type: "comment",
+        targetUserId: post.authorId,
+        sender: {
+          id: user._id,
+          name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+          image: user.imageUrl || "",
+        },
+        timestamp: Date.now(),
+        read: false,
+      });
+    }
+
+    return comment;
   },
 });
 
@@ -29,19 +48,23 @@ export const getCommentsForPost = query({
   },
 });
 
-// Mutation to delete a comment (only by its author)
+// Mutation to delete a comment (only by its author or the post author)
 export const deleteComment = mutation({
   args: { commentId: v.id("comments") },
   handler: async (ctx, { commentId }) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Unauthorized: User not found");
+
     const comment = await ctx.db.get(commentId);
     if (!comment) throw new Error("Comment not found");
+
     const post = await ctx.db.get(comment.postId);
     if (!post) throw new Error("Post not found");
+
     if (comment.authorId !== user._id && post.authorId !== user._id) {
       throw new Error("Unauthorized: You can only delete your own comments");
     }
+
     await ctx.db.delete(commentId);
   },
 });
@@ -52,11 +75,14 @@ export const updateComment = mutation({
   handler: async (ctx, { commentId, content }) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Unauthorized: User not found");
+
     const comment = await ctx.db.get(commentId);
     if (!comment) throw new Error("Comment not found");
+
     if (comment.authorId !== user._id) {
       throw new Error("Unauthorized: You can only update your own comments");
     }
+
     await ctx.db.patch(commentId, { content, edited: true });
   },
 });

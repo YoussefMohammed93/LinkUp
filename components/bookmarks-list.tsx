@@ -28,7 +28,7 @@ export default function BookmarksList() {
 
   return (
     <div className="w-full min-w-0 space-y-5 my-5">
-      <h1 className="text-center text-xl font-bold mb-4 p-2 bg-card dark:bg-[#252728] border rounded-sm">
+      <h1 className="text-center text-xl font-bold mb-4 p-2 bg-card dark:bg-[#252728]/50 border rounded-sm">
         {currentUser?.firstName} {currentUser?.lastName}&apos;s Bookmarks
       </h1>
       {bookmarkedPosts.length === 0 ? (

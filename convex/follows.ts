@@ -58,6 +58,18 @@ export const followUser = mutation({
       followingId: targetUserId,
     });
 
+    await ctx.db.insert("notifications", {
+      type: "follow",
+      targetUserId,
+      sender: {
+        id: currentUser._id,
+        name: `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim(),
+        image: currentUser.imageUrl || "",
+      },
+      timestamp: Date.now(),
+      read: false,
+    });
+
     return { success: true };
   },
 });

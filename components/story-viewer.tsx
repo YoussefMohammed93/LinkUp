@@ -200,7 +200,7 @@ export default function StoryViewer({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="p-0 bg-black border-none max-w-[340px] w-full h-[90vh] sm:h-[95vh] md:w-[700px]">
+        <DialogContent className="p-0 bg-black border-none max-w-[340px] w-full h-[80vh] sm:h-[95vh] md:w-[700px]">
           <div className="hidden">
             <DialogTitle>
               {currentStory?.authorName || "Story Viewer"}
@@ -280,7 +280,6 @@ export default function StoryViewer({
                     ref={videoRef}
                     src={mediaUrl}
                     autoPlay
-                    muted
                     onTimeUpdate={handleVideoTimeUpdate}
                     onEnded={handleVideoEnded}
                     className="w-full h-full object-cover rounded-lg"

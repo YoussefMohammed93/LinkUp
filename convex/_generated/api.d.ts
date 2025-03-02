@@ -20,6 +20,7 @@ import type * as comments from "../comments.js";
 import type * as follows from "../follows.js";
 import type * as http from "../http.js";
 import type * as likes from "../likes.js";
+import type * as notifications from "../notifications.js";
 import type * as posts from "../posts.js";
 import type * as reports from "../reports.js";
 import type * as stories from "../stories.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   follows: typeof follows;
   http: typeof http;
   likes: typeof likes;
+  notifications: typeof notifications;
   posts: typeof posts;
   reports: typeof reports;
   stories: typeof stories;

@@ -118,4 +118,33 @@ export default defineSchema({
     .index("byStoryUser", ["storyId", "userId"])
     .index("byStory", ["storyId"])
     .index("byUser", ["userId"]),
+
+  notifications: defineTable({
+    type: v.union(
+      v.literal("follow"),
+      v.literal("comment"),
+      v.literal("reaction"),
+      v.literal("share"),
+      v.literal("bookmark")
+    ),
+    targetUserId: v.id("users"),
+    sender: v.object({
+      id: v.id("users"),
+      name: v.string(),
+      image: v.string(),
+    }),
+    reaction: v.optional(
+      v.union(
+        v.literal("like"),
+        v.literal("love"),
+        v.literal("care"),
+        v.literal("haha"),
+        v.literal("wow"),
+        v.literal("sad"),
+        v.literal("angry")
+      )
+    ),
+    timestamp: v.number(),
+    read: v.boolean(),
+  }).index("byTargetUserId", ["targetUserId"]),
 });

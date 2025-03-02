@@ -28,6 +28,22 @@ export const addBookmark = mutation({
       userId: user._id,
       createdAt: Date.now(),
     });
+
+    const post = await ctx.db.get(postId);
+
+    if (post && post.authorId !== user._id) {
+      await ctx.db.insert("notifications", {
+        type: "bookmark",
+        targetUserId: post.authorId,
+        sender: {
+          id: user._id,
+          name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+          image: user.imageUrl || "",
+        },
+        timestamp: Date.now(),
+        read: false,
+      });
+    }
   },
 });
 

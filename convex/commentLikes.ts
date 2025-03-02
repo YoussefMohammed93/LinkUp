@@ -81,5 +81,20 @@ export const reactToComment = mutation({
         createdAt: Date.now(),
       });
     }
+
+    const comment = await ctx.db.get(commentId);
+    if (comment && comment.authorId !== user._id) {
+      await ctx.db.insert("notifications", {
+        type: "reaction",
+        targetUserId: comment.authorId,
+        sender: {
+          id: user._id,
+          name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+          image: user.imageUrl || "",
+        },
+        timestamp: Date.now(),
+        read: false,
+      });
+    }
   },
 });

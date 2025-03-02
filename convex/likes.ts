@@ -59,6 +59,7 @@ export const reactToPost = mutation({
     if (existing) {
       if (existing.reaction === reaction) {
         await ctx.db.delete(existing._id);
+        return;
       } else {
         await ctx.db.patch(existing._id, { reaction, createdAt: Date.now() });
       }
@@ -68,6 +69,23 @@ export const reactToPost = mutation({
         userId: user._id,
         reaction,
         createdAt: Date.now(),
+      });
+    }
+
+    const post = await ctx.db.get(postId);
+
+    if (post && post.authorId !== user._id) {
+      await ctx.db.insert("notifications", {
+        type: "reaction",
+        targetUserId: post.authorId,
+        sender: {
+          id: user._id,
+          name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+          image: user.imageUrl || "",
+        },
+        reaction,
+        timestamp: Date.now(),
+        read: false,
       });
     }
   },
