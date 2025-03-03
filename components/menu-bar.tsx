@@ -24,16 +24,22 @@ interface MenuBarProps {
 
 export default function MenuBar({ className }: MenuBarProps) {
   const currentUser = useQuery(api.users.currentUser);
-  const profileLink = currentUser ? `/users/${currentUser._id}` : "/";
+  const unreadNotificationsCount =
+    useQuery(api.notifications.countUnreadNotifications) || 0;
+  const unreadMessagesCount =
+    useQuery(
+      api.directMessages.countUnreadMessages,
+      currentUser ? { userId: currentUser._id } : "skip"
+    ) || 0;
 
-  const unreadCount = useQuery(api.notifications.countUnreadNotifications) || 0;
+  const profileLink = currentUser ? `/users/${currentUser._id}` : "/";
 
   const [avatarLoading, setAvatarLoading] = useState(true);
 
   const menuItems = [
     { title: "Home", href: "/", icon: Home },
     { title: "Profile", href: profileLink, icon: User },
-    { title: "Messages", href: "/messages", icon: MessagesSquare },
+    { title: "Messages", href: "/chats", icon: MessagesSquare },
     { title: "Bookmarks", href: "/bookmarks", icon: Bookmark },
     { title: "Notifications", href: "/notifications", icon: Bell },
   ];
@@ -125,9 +131,16 @@ export default function MenuBar({ className }: MenuBarProps) {
             >
               <div className="relative">
                 <Icon className="size-[17px]" />
-                {title === "Notifications" && unreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center">
-                    {unreadCount}
+                {title === "Notifications" && unreadNotificationsCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-red-500 text-white rounded-full w-4 h-4 text-[12px] flex items-center justify-center">
+                    {unreadNotificationsCount > 9
+                      ? "9+"
+                      : unreadNotificationsCount}
+                  </span>
+                )}
+                {title === "Messages" && unreadMessagesCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-red-500 text-white rounded-full w-4 h-4 text-[12px] flex items-center justify-center">
+                    {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
                   </span>
                 )}
               </div>

@@ -31,8 +31,8 @@ export interface Notification {
 }
 
 interface CustomToast {
-  id: string | number;
   visible: boolean;
+  id: string | number;
 }
 
 function getNotificationText(
@@ -109,9 +109,20 @@ export function ToastNotifications() {
     api.notifications.markNotificationAsRead
   );
 
-  const [displayedToasts, setDisplayedToasts] = useState<Set<string>>(
-    new Set()
-  );
+  const [displayedToasts, setDisplayedToasts] = useState<Set<string>>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("displayedToasts");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    }
+    return new Set();
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "displayedToasts",
+      JSON.stringify(Array.from(displayedToasts))
+    );
+  }, [displayedToasts]);
 
   useEffect(() => {
     const newIds: string[] = [];
@@ -120,7 +131,7 @@ export function ToastNotifications() {
         newIds.push(notification._id);
         toast.custom(
           (t) => {
-            const customToast = t as unknown as CustomToast;
+            const toastProps = t as unknown as CustomToast;
             return (
               <div
                 onClick={async () => {
@@ -141,7 +152,7 @@ export function ToastNotifications() {
                   window.location.href = getNotificationLink(notification);
                 }}
                 className={`${
-                  customToast.visible ? "animate-enter" : "animate-leave"
+                  toastProps.visible ? "animate-enter" : "animate-leave"
                 } flex items-center gap-3 border p-3 cursor-pointer w-full sm:w-80 bg-background text-foreground shadow-none`}
               >
                 <div className="flex-shrink-0">

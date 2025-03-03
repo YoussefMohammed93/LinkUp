@@ -152,4 +152,25 @@ export default defineSchema({
   })
     .index("byTargetUserId", ["targetUserId"])
     .index("byTargetUserAndRead", ["targetUserId", "read"]),
+
+  directMessages: defineTable({
+    senderId: v.id("users"),
+    recipientId: v.id("users"),
+    messageType: v.union(
+      v.literal("text"),
+      v.literal("image"),
+      v.literal("video"),
+      v.literal("audio")
+    ),
+    content: v.optional(v.string()),
+    attachments: v.optional(v.array(v.string())),
+    sentAt: v.number(),
+    deliveredAt: v.optional(v.number()),
+    readAt: v.optional(v.union(v.number(), v.null())),
+    updatedAt: v.optional(v.number()),
+    deleted: v.optional(v.boolean()),
+  })
+    .index("bySender", ["senderId"])
+    .index("byRecipient", ["recipientId"])
+    .index("byConversation", ["senderId", "recipientId"]),
 });
