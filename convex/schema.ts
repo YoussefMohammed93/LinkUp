@@ -149,5 +149,7 @@ export default defineSchema({
     ),
     timestamp: v.number(),
     read: v.boolean(),
-  }).index("byTargetUserId", ["targetUserId"]),
+  })
+    .index("byTargetUserId", ["targetUserId"])
+    .index("byTargetUserAndRead", ["targetUserId", "read"]),
 });

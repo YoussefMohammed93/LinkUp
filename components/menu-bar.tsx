@@ -13,9 +13,9 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useQuery } from "convex/react";
-import { Skeleton } from "./ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import OnlineStatusIndicator from "./online-status-indicator";
 
 interface MenuBarProps {
@@ -25,6 +25,8 @@ interface MenuBarProps {
 export default function MenuBar({ className }: MenuBarProps) {
   const currentUser = useQuery(api.users.currentUser);
   const profileLink = currentUser ? `/users/${currentUser._id}` : "/";
+
+  const unreadCount = useQuery(api.notifications.countUnreadNotifications) || 0;
 
   const [avatarLoading, setAvatarLoading] = useState(true);
 
@@ -106,7 +108,7 @@ export default function MenuBar({ className }: MenuBarProps) {
             key={title}
             variant="ghost"
             className={cn(
-              "flex items-center justify-start gap-2 w-full py-1 px-3 hover:bg-secondary",
+              "flex items-center justify-start gap-2 w-full py-1 px-3 hover:bg-secondary relative",
               index === 0
                 ? "lg:rounded-tl-lg lg:rounded-tr-lg lg:rounded-b-none"
                 : index === menuItems.length - 1
@@ -121,7 +123,14 @@ export default function MenuBar({ className }: MenuBarProps) {
               href={href}
               className="flex items-center justify-center lg:justify-start w-full"
             >
-              <Icon className="size-[17px]" />
+              <div className="relative">
+                <Icon className="size-[17px]" />
+                {title === "Notifications" && unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </div>
               <span className="hidden lg:inline text-xs">{title}</span>
             </Link>
           </Button>

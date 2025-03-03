@@ -92,3 +92,19 @@ export const markNotificationAsRead = mutation({
     return { success: true };
   },
 });
+
+export const countUnreadNotifications = query({
+  args: {},
+  handler: async (ctx) => {
+    const currentUser = await getCurrentUser(ctx);
+    if (!currentUser) return 0;
+
+    const unreadNotifications = await ctx.db
+      .query("notifications")
+      .withIndex("byTargetUserAndRead", (q) =>
+        q.eq("targetUserId", currentUser._id).eq("read", false)
+      )
+      .collect();
+    return unreadNotifications.length;
+  },
+});

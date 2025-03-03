@@ -1,21 +1,17 @@
 "use client";
 
-import {
-  UserPlus,
-  MessageCircle,
-  Share2,
-  Bookmark,
-  Circle,
-} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useMutation } from "convex/react";
+import InfiniteScroll from "react-infinite-scroll-component";
+import { UserPlus, Bookmark, Circle, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type NotificationType =
@@ -85,13 +81,43 @@ const getNotificationIcon = (
 
   switch (type) {
     case "follow":
-      return <UserPlus className="w-6 h-6 text-primary" />;
+      return <UserPlus className="w-6 h-6 text-primary fill-current" />;
     case "comment":
-      return <MessageCircle className="w-6 h-6 text-secondary-foreground" />;
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="size-6 text-green-500 fill-current"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z"
+          />
+        </svg>
+      );
     case "share":
-      return <Share2 className="w-6 h-6 text-primary" />;
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-[22px] h-[22px]"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+          />
+        </svg>
+      );
     case "bookmark":
-      return <Bookmark className="w-6 h-6 text-accent" />;
+      return <Bookmark className="w-6 h-6 text-primary fill-current" />;
     default:
       return <Circle className="w-6 h-6" />;
   }
@@ -201,7 +227,7 @@ function NotificationItem({
     >
       <div
         className={cn(
-          "flex items-start gap-4 my-3 last:mb-0 p-4 border rounded-xl hover:bg-accent cursor-pointer",
+          "flex items-start gap-4 my-3 p-4 border rounded-xl hover:bg-accent cursor-pointer",
           !notification.read ? "bg-accent" : "bg-card"
         )}
       >
@@ -231,6 +257,7 @@ function NotificationItem({
                 variant="link"
                 size="sm"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   markAsRead(notification._id);
                 }}
@@ -254,6 +281,8 @@ export function NotificationsList() {
   const markNotificationAsReadMutation = useMutation(
     api.notifications.markNotificationAsRead
   );
+
+  const [visibleCount, setVisibleCount] = useState(5);
 
   const markAllAsRead = async () => {
     try {
@@ -289,6 +318,8 @@ export function NotificationsList() {
     );
   }
 
+  const visibleNotifications = notifications.slice(0, visibleCount);
+
   return (
     <Card className="p-6 bg-card text-card-foreground shadow-none rounded-xl w-full">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
@@ -301,19 +332,30 @@ export function NotificationsList() {
           Mark all as read
         </Button>
       </div>
-      <div className="space-y-4">
-        {notifications.length === 0 ? (
-          <p className="text-center text-muted-foreground">No notifications</p>
-        ) : (
-          notifications.map((notification: Notification) => (
-            <NotificationItem
-              key={notification._id}
-              notification={notification}
-              markAsRead={markAsRead}
-            />
-          ))
-        )}
-      </div>
+      {notifications.length === 0 ? (
+        <p className="text-center text-muted-foreground">No notifications</p>
+      ) : (
+        <InfiniteScroll
+          dataLength={visibleNotifications.length}
+          next={() => setVisibleCount((prev) => prev + 5)}
+          hasMore={visibleNotifications.length < notifications.length}
+          loader={
+            <div className="flex justify-center my-3">
+              <Loader2 className="animate-spin size-6" />
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            {visibleNotifications.map((notification: Notification) => (
+              <NotificationItem
+                key={notification._id}
+                notification={notification}
+                markAsRead={markAsRead}
+              />
+            ))}
+          </div>
+        </InfiniteScroll>
+      )}
     </Card>
   );
 }
