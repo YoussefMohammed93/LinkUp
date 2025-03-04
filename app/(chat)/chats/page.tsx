@@ -37,10 +37,10 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col md:flex-row">
+    <div className="h-screen flex flex-col lg:flex-row">
       <div
-        className={`w-full md:w-1/4 border-r overflow-y-auto ${
-          selectedFriend ? "hidden md:block" : "block"
+        className={`w-full lg:w-1/4 border-r overflow-y-auto ${
+          selectedFriend ? "hidden lg:block" : "block"
         }`}
       >
         <ChatList onSelect={setSelectedFriend} />
@@ -48,10 +48,10 @@ const ChatPage = () => {
       <div className="flex-1 flex flex-col">
         {selectedFriend && (
           <>
-            <div className="p-4 border-b flex items-center space-x-4">
+            <div className="sticky top-0 z-10 bg-white lg:static p-4 border-b flex items-center space-x-4">
               <button
                 onClick={() => setSelectedFriend(null)}
-                className="text-blue-500 md:hidden"
+                className="text-blue-500 lg:hidden"
               >
                 Back
               </button>

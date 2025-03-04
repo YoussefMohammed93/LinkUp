@@ -1,8 +1,9 @@
 "use client";
 
-import { Check } from "lucide-react";
+import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { api } from "@/convex/_generated/api";
+import { Check, Volume2 } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import React, { FC, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "convex/react";
@@ -89,7 +90,36 @@ const ChatMessages: FC<ChatMessagesProps> = ({ friend, currentUserId }) => {
                 : "bg-muted text-muted-foreground"
             }`}
           >
-            <div>{msg.content}</div>
+            {msg.messageType === "text" && <div>{msg.content}</div>}
+            {msg.messageType === "image" && msg.attachments?.[0] && (
+              <Image
+                width={200}
+                height={200}
+                src={msg.attachments[0]}
+                alt="Sent image"
+                className="max-w-xs rounded-lg"
+              />
+            )}
+            {msg.messageType === "video" && msg.attachments?.[0] && (
+              <video controls className="max-w-xs rounded-lg">
+                <source src={msg.attachments[0]} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            )}
+            {msg.messageType === "audio" && msg.attachments?.[0] && (
+              <div className="flex flex-col items-start space-y-2">
+                <div className="flex items-center space-x-1">
+                  <Volume2 size={16} className="text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Audio Message
+                  </span>
+                </div>
+                <audio controls className="w-64 rounded-lg shadow-sm">
+                  <source src={msg.attachments[0]} type="audio/webm" />
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            )}
             <div className="flex items-center justify-end text-xs mt-1 space-x-1">
               <span>
                 {new Date(msg.sentAt).toLocaleTimeString([], {
