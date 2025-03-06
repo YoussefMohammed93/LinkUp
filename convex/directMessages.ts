@@ -12,7 +12,8 @@ export const getDirectMessages = query({
       .filter((q) =>
         q.and(
           q.eq(q.field("senderId"), user1),
-          q.eq(q.field("recipientId"), user2)
+          q.eq(q.field("recipientId"), user2),
+          q.eq(q.field("deleted"), false)
         )
       )
       .collect();
@@ -22,7 +23,8 @@ export const getDirectMessages = query({
       .filter((q) =>
         q.and(
           q.eq(q.field("senderId"), user2),
-          q.eq(q.field("recipientId"), user1)
+          q.eq(q.field("recipientId"), user1),
+          q.eq(q.field("deleted"), false)
         )
       )
       .collect();
@@ -112,5 +114,62 @@ export const countUnreadMessages = query({
       )
       .collect();
     return unreadMessages.length;
+  },
+});
+
+export const editMessage = mutation({
+  args: {
+    messageId: v.id("directMessages"),
+    newContent: v.string(),
+  },
+  handler: async (ctx, { messageId, newContent }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const message = await ctx.db.get(messageId);
+    if (!message) throw new Error("Message not found");
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("byClerkUserId", (q) => q.eq("clerkUserId", identity.subject))
+      .unique();
+
+    if (!currentUser) throw new Error("Current user not found");
+
+    if (message.senderId !== currentUser._id) {
+      throw new Error("Unauthorized to edit this message");
+    }
+
+    await ctx.db.patch(messageId, {
+      content: newContent,
+      edited: true,
+      updatedAt: Date.now(),
+    });
+    return { success: true };
+  },
+});
+
+export const deleteMessage = mutation({
+  args: { messageId: v.id("directMessages") },
+  handler: async (ctx, { messageId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const message = await ctx.db.get(messageId);
+    if (!message) throw new Error("Message not found");
+
+    const currentUser = await ctx.db
+      .query("users")
+      .withIndex("byClerkUserId", (q) => q.eq("clerkUserId", identity.subject))
+      .unique();
+
+    if (!currentUser) throw new Error("Current user not found");
+
+    if (message.senderId !== currentUser._id) {
+      throw new Error("Unauthorized to delete this message");
+    }
+
+    await ctx.db.patch(messageId, { deleted: true });
+    return { success: true };
   },
 });

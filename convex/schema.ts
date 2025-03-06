@@ -169,6 +169,7 @@ export default defineSchema({
     readAt: v.optional(v.union(v.number(), v.null())),
     updatedAt: v.optional(v.number()),
     deleted: v.optional(v.boolean()),
+    edited: v.optional(v.boolean()),
   })
     .index("bySender", ["senderId"])
     .index("byRecipient", ["recipientId"])

@@ -7,6 +7,7 @@ interface ExpandableTextProps {
 export default function ExpandableText({ text }: ExpandableTextProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSeeMore, setShowSeeMore] = useState(false);
+
   const visibleRef = useRef<HTMLParagraphElement>(null);
   const hiddenRef = useRef<HTMLParagraphElement>(null);
 
@@ -37,7 +38,10 @@ export default function ExpandableText({ text }: ExpandableTextProps) {
       </p>
       {!isExpanded && showSeeMore && (
         <button
-          onClick={() => setIsExpanded(true)}
+          onClick={(e) => {
+            e.preventDefault();
+            setIsExpanded(true);
+          }}
           className="text-primary mt-1 text-sm"
         >
           <b>See more...</b>

@@ -5,10 +5,11 @@ import {
   Smile,
   Mic,
   ImageIcon,
-  Pause,
   Play,
+  Pause,
   SendHorizonal,
   Trash,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import EmojiPicker from "emoji-picker-react";
@@ -17,6 +18,7 @@ import { useEdgeStore } from "@/lib/edgestore";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import React, { FC, useRef, useState } from "react";
+import { Progress } from "@/components/ui/progress";
 
 interface ChatInputProps {
   friend: { _id: string; chatId: string };
@@ -47,11 +49,12 @@ const ChatInput: FC<ChatInputProps> = ({
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [recordingTime, setRecordingTime] = useState<number>(0);
   const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
-  const [sendAfterRecording, setSendAfterRecording] = useState<boolean>(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioChunks = useRef<Blob[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const startTimer = () => {
     timerRef.current = setInterval(() => {
@@ -103,13 +106,9 @@ const ChatInput: FC<ChatInputProps> = ({
         stopTimer();
         const blob = new Blob(audioChunks.current, { type: "audio/webm" });
         setRecordedAudio(blob);
+        setAudioUrl(URL.createObjectURL(blob));
         setIsRecording(false);
         setIsPaused(false);
-
-        if (sendAfterRecording) {
-          handleSend();
-          setSendAfterRecording(false);
-        }
       };
       recorder.start();
       setIsRecording(true);
@@ -158,13 +157,13 @@ const ChatInput: FC<ChatInputProps> = ({
     }
     stopTimer();
     setRecordedAudio(null);
+    setAudioUrl(null);
     setIsRecording(false);
     setIsPaused(false);
   };
 
   const handleSend = async () => {
     if (isRecording) {
-      setSendAfterRecording(true);
       stopRecording();
       return;
     }
@@ -184,6 +183,7 @@ const ChatInput: FC<ChatInputProps> = ({
         });
         await onSend(message, "audio", [res.url]);
         setRecordedAudio(null);
+        setAudioUrl(null);
       } catch (error) {
         console.error("Failed to upload audio:", error);
       } finally {
@@ -211,7 +211,14 @@ const ChatInput: FC<ChatInputProps> = ({
         setUploadProgress(0);
       }
     } else if (message.trim()) {
-      await onSend(message, "text", []);
+      setIsUploading(true);
+      try {
+        await onSend(message, "text", []);
+      } catch (error) {
+        console.error("Failed to send text message:", error);
+      } finally {
+        setIsUploading(false);
+      }
     }
     setMessage("");
   };
@@ -229,116 +236,168 @@ const ChatInput: FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="flex flex-col relative">
+    <div className="relative bg-background border-t">
+      {(previewUrl || recordedAudio) && (
+        <div className="absolute bottom-full left-0 right-0 p-2 bg-muted/75 backdrop-blur-sm border-b">
+          <div className="flex items-center gap-4">
+            {previewUrl && (
+              <div className="relative group">
+                {previewFile?.type.startsWith("image") ? (
+                  <Image
+                    width={350}
+                    height={350}
+                    src={previewUrl}
+                    alt="Preview"
+                    className="rounded-lg object-cover border"
+                  />
+                ) : (
+                  <video
+                    controls
+                    className="w-32 h-20 rounded-lg border object-cover"
+                  >
+                    <source src={previewUrl} />
+                  </video>
+                )}
+                <button
+                  onClick={() => {
+                    setPreviewFile(null);
+                    setPreviewUrl(null);
+                  }}
+                  className="absolute -top-2 -right-2 bg-foreground rounded-full p-0.5 hover:bg-opacity-80 transition-opacity"
+                >
+                  <X className="h-4 w-4 text-background" />
+                </button>
+                {isUploading && (
+                  <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                    <Progress
+                      value={uploadProgress}
+                      className="w-3/4 h-2 bg-background/20"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            {recordedAudio && (
+              <div className="flex items-center gap-4 p-3 rounded-lg w-full">
+                <div className="flex-1 flex items-center gap-3">
+                  <audio
+                    ref={audioRef}
+                    src={audioUrl!}
+                    controls
+                    className="flex-1"
+                  />
+                  <div className="flex items-center gap-2 ml-auto">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={cancelRecording}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSend}
+                      disabled={isUploading}
+                    >
+                      <SendHorizonal className="h-4 w-4" />
+                      Send
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {showEmojiPicker && (
-        <div className="absolute bottom-16 left-2 z-10">
+        <div className="absolute bottom-full left-2 mb-2 z-50 shadow-xl rounded-lg overflow-hidden">
           <EmojiPicker
             onEmojiClick={(e) => insertEmoji(e.emoji)}
             skinTonesDisabled
             searchDisabled
-            className="max-w-[320px] max-h-60 sm:max-w-[400px] overflow-y-auto dark:border-none dark:bg-card"
             previewConfig={{ showPreview: false }}
+            width="100%"
+            height={360}
           />
         </div>
       )}
-      {previewUrl && (
-        <div className="relative mb-2 ml-2">
-          {previewFile && previewFile.type.startsWith("image") ? (
-            <Image
-              width={200}
-              height={200}
-              src={previewUrl}
-              alt="Preview"
-              className="max-w-xs rounded-lg"
-            />
-          ) : (
-            <video controls className="max-w-xs rounded-lg">
-              <source src={previewUrl} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          )}
-          {isUploading && (
-            <div className="absolute inset-0 max-w-xs rounded-lg flex items-center justify-center bg-black bg-opacity-50">
-              <span className="text-white">Uploading... {uploadProgress}%</span>
-            </div>
-          )}
+      <div className="p-2 flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowEmojiPicker((prev) => !prev)}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Smile className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleFileButtonClick}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ImageIcon className="h-5 w-5" />
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            hidden
+            onChange={handleFileChange}
+          />
         </div>
-      )}
-      {(isRecording || recordedAudio) && (
-        <div className="relative mb-2 ml-2 p-2 border rounded-md flex flex-col items-center">
+        <div className="flex-1 relative">
+          <Input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message"
+            className="rounded-full py-5 pr-16 border-2"
+          />
           {isRecording ? (
-            <div className="flex items-center space-x-2">
-              <span>Recording: {recordingTime}s</span>
-              {isPaused ? (
-                <Button onClick={resumeRecording} variant="outline">
-                  <Play size={16} />
-                </Button>
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="destructive"
+                className={`rounded-full gap-1.5 ${isPaused ? "" : "animate-pulse"}`}
+                onClick={stopRecording}
+              >
+                <div className="h-2 w-2 bg-background rounded-full" />
+                <span>{recordingTime}s</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={isPaused ? resumeRecording : pauseRecording}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {isPaused ? (
+                  <Play className="h-4 w-4" />
+                ) : (
+                  <Pause className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              size="sm"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full h-8 w-8"
+              onClick={
+                message.trim() || previewUrl || recordedAudio
+                  ? handleSend
+                  : startRecording
+              }
+              disabled={isUploading}
+            >
+              {message.trim() || previewUrl || recordedAudio ? (
+                <SendHorizonal className="h-4 w-4" />
               ) : (
-                <Button onClick={pauseRecording} variant="outline">
-                  <Pause size={16} />
-                </Button>
+                <Mic className="h-4 w-4" />
               )}
-              <Button onClick={handleSend}>Preview</Button>
-            </div>
-          ) : recordedAudio ? (
-            <div className="flex flex-col items-center">
-              <audio controls src={URL.createObjectURL(recordedAudio)} />
-              <div className="flex items-center space-x-2 mt-2">
-                <Button onClick={cancelRecording} variant="destructive">
-                  <Trash className="size-5" />
-                  Delete
-                </Button>
-                <Button onClick={handleSend}>
-                  <SendHorizonal className="size-5" />
-                  Send
-                </Button>
-              </div>
-            </div>
-          ) : null}
-          {isUploading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-              <span className="text-white">Uploading... {uploadProgress}%</span>
-            </div>
+            </Button>
           )}
         </div>
-      )}
-      <div className="flex items-center space-x-2 p-4 border-t">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowEmojiPicker((prev) => !prev)}
-        >
-          <Smile size={20} />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={handleFileButtonClick}>
-          <ImageIcon size={20} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            if (!isRecording && !recordedAudio) {
-              startRecording();
-            }
-          }}
-        >
-          <Mic size={20} color={isRecording ? "red" : undefined} />
-        </Button>
-        <Input
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          className="flex-1"
-        />
-        <Button onClick={handleSend}>Send</Button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,video/*"
-          style={{ display: "none" }}
-          onChange={handleFileChange}
-        />
       </div>
     </div>
   );
