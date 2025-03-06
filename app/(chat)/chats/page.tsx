@@ -61,7 +61,7 @@ const ChatPage = () => {
   return (
     <div className="h-screen flex flex-col lg:flex-row bg-background">
       <div
-        className={`w-full lg:w-96 border-r overflow-hidden ${
+        className={`w-full lg:w-96 lg:border-r overflow-hidden ${
           selectedFriend ? "hidden lg:block" : "block"
         }`}
       >

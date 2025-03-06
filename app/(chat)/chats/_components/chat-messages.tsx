@@ -232,7 +232,7 @@ const ChatMessages: FC<ChatMessagesProps> = ({ friend, currentUserId }) => {
                       "rounded-xl shadow-sm overflow-hidden",
                       isImage || isAudio
                         ? "bg-transparent p-0 border-none"
-                        : "p-3",
+                        : "p-2.5",
                       !isImage &&
                         !isAudio &&
                         (isUserMessage
@@ -267,7 +267,7 @@ const ChatMessages: FC<ChatMessagesProps> = ({ friend, currentUserId }) => {
                     ) : (
                       <>
                         {msg.messageType === "text" && (
-                          <div className="text-base break-words text-white">
+                          <div className="text-base break-words dark:text-white">
                             {msg.content}
                           </div>
                         )}
