@@ -161,3 +161,20 @@ export const updateOnlineStatus = mutation({
     return { success: true, lastActiveAt: now };
   },
 });
+
+export const searchUsers = query({
+  args: { query: v.string() },
+  async handler(ctx, { query }) {
+    const allUsers = await ctx.db.query("users").collect();
+    const lowerQuery = query.toLowerCase();
+
+    return allUsers.filter((user) => {
+      return (
+        (user.firstName && user.firstName.toLowerCase().includes(lowerQuery)) ||
+        (user.lastName && user.lastName.toLowerCase().includes(lowerQuery)) ||
+        (user.jobTitle && user.jobTitle.toLowerCase().includes(lowerQuery)) ||
+        (user.email && user.email.toLowerCase().includes(lowerQuery))
+      );
+    });
+  },
+});
