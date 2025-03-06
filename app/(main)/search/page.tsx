@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { Suspense } from "react";
+import { Loader } from "lucide-react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useSearchParams } from "next/navigation";
@@ -22,35 +24,11 @@ export type User = {
   coverImageUrl?: string | null;
 };
 
-export default function SearchUsersPage() {
-  const searchParams = useSearchParams();
-  const q = searchParams.get("q") || "";
-
+function SearchUsersContent({ q }: { q: string }) {
   const users = useQuery(api.users.searchUsers, { query: q });
 
   if (users === undefined) {
-    return (
-      <>
-        <div className="w-full min-w-0 space-y-5 my-5">
-          <h1 className="text-center text-2xl font-bold mb-4">
-            Search Results for &quot;{q}&quot;
-          </h1>
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-3 border-b pb-3 hover:bg-muted transition-colors p-2 rounded-none"
-            >
-              <Skeleton className="h-12 w-12 rounded-full" />
-              <div>
-                <Skeleton className="h-4 w-36 rounded-lg" />
-                <Skeleton className="h-3 w-24 rounded-lg mt-1" />
-              </div>
-            </div>
-          ))}
-        </div>
-        <PeopleSidebar />
-      </>
-    );
+    return null;
   }
 
   return (
@@ -93,5 +71,47 @@ export default function SearchUsersPage() {
       </div>
       <PeopleSidebar />
     </>
+  );
+}
+
+function SearchUsersFallback() {
+  return (
+    <>
+      <div className="w-full min-w-0 space-y-5 my-5">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Loader className="animate-spin text-primary" />
+          <h1 className="text-center text-2xl font-bold">
+            Loading search results...
+          </h1>
+        </div>
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex items-center gap-3 border-b pb-3 hover:bg-muted transition-colors p-2 rounded-none"
+          >
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div>
+              <Skeleton className="h-4 w-36 rounded-lg" />
+              <Skeleton className="h-3 w-24 rounded-lg mt-1" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <PeopleSidebar />
+    </>
+  );
+}
+
+function SearchUsersContentWrapper() {
+  const searchParams = useSearchParams();
+  const q = searchParams.get("q") || "";
+  return <SearchUsersContent q={q} />;
+}
+
+export default function SearchUsersPage() {
+  return (
+    <Suspense fallback={<SearchUsersFallback />}>
+      <SearchUsersContentWrapper />
+    </Suspense>
   );
 }

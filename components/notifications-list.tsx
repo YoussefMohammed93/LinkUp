@@ -90,7 +90,7 @@ const getNotificationIcon = (
           viewBox="0 0 24 24"
           strokeWidth={1.5}
           stroke="currentColor"
-          className="size-6 text-green-500 fill-current"
+          className="w-6 h-6 text-green-500 fill-current"
         >
           <path
             strokeLinecap="round"
@@ -225,7 +225,7 @@ function NotificationItem({
         if (!notification.read) markAsRead(notification._id);
       }}
     >
-      <div
+      <article
         className={cn(
           "flex items-start gap-4 my-3 p-4 border rounded-xl hover:bg-accent cursor-pointer",
           !notification.read ? "bg-accent" : "bg-card"
@@ -249,9 +249,12 @@ function NotificationItem({
             </p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <p className="text-sm text-muted-foreground">
+            <time
+              className="text-sm text-muted-foreground"
+              dateTime={new Date(notification.timestamp).toISOString()}
+            >
               {formatRelativeTime(notification.timestamp)}
-            </p>
+            </time>
             {!notification.read && (
               <Button
                 variant="link"
@@ -268,7 +271,7 @@ function NotificationItem({
             )}
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }
@@ -305,15 +308,15 @@ export function NotificationsList() {
   if (notifications === undefined) {
     return (
       <Card className="p-6 bg-card text-card-foreground shadow-none rounded-xl w-full">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <Skeleton className="h-8 w-48 rounded border" />
           <Skeleton className="h-8 w-32 rounded border" />
-        </div>
-        <div className="space-y-4">
+        </header>
+        <section className="space-y-4">
           {Array.from({ length: 5 }).map((_, idx) => (
             <NotificationSkeleton key={idx} />
           ))}
-        </div>
+        </section>
       </Card>
     );
   }
@@ -322,7 +325,7 @@ export function NotificationsList() {
 
   return (
     <Card className="p-6 bg-card text-card-foreground shadow-none rounded-xl w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <h2 className="text-xl font-bold text-foreground">Notifications</h2>
         <Button
           variant="outline"
@@ -331,7 +334,7 @@ export function NotificationsList() {
         >
           Mark all as read
         </Button>
-      </div>
+      </header>
       {notifications.length === 0 ? (
         <p className="text-center text-muted-foreground">No notifications</p>
       ) : (
@@ -341,19 +344,22 @@ export function NotificationsList() {
           hasMore={visibleNotifications.length < notifications.length}
           loader={
             <div className="flex justify-center my-3">
-              <Loader2 className="animate-spin size-6" />
+              <Loader2 className="animate-spin w-6 h-6" />
             </div>
           }
         >
-          <div className="space-y-4">
-            {visibleNotifications.map((notification: Notification) => (
-              <NotificationItem
-                key={notification._id}
-                notification={notification}
-                markAsRead={markAsRead}
-              />
-            ))}
-          </div>
+          <section>
+            <ul className="space-y-4">
+              {visibleNotifications.map((notification: Notification) => (
+                <li key={notification._id}>
+                  <NotificationItem
+                    notification={notification}
+                    markAsRead={markAsRead}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
         </InfiniteScroll>
       )}
     </Card>

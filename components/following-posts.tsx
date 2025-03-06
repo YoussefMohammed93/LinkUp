@@ -51,9 +51,9 @@ export default function InfiniteFollowingPosts({
         </p>
       }
     >
-      <div className="space-y-2">
+      <section className="space-y-2">
         {visiblePosts.map((post, index) => (
-          <div
+          <article
             key={post._id}
             className={`pt-3 ${index === visiblePosts.length - 1 ? "pb-5" : ""}`}
           >
@@ -72,9 +72,9 @@ export default function InfiniteFollowingPosts({
                 return Promise.resolve();
               }}
             />
-          </div>
+          </article>
         ))}
-      </div>
+      </section>
     </InfiniteScroll>
   );
 }
@@ -83,7 +83,7 @@ function PostsSkeleton() {
   return (
     <div className="space-y-3 pb-5 pt-3">
       {Array.from({ length: 3 }).map((_, index) => (
-        <div
+        <article
           key={index}
           className="border border-[hsl(var(--border))] rounded-lg p-4 bg-card"
         >
@@ -99,7 +99,7 @@ function PostsSkeleton() {
             <Skeleton className="h-4 rounded w-5/6 bg-secondary" />
             <Skeleton className="h-4 rounded w-2/3 bg-secondary" />
           </div>
-        </div>
+        </article>
       ))}
     </div>
   );

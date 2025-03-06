@@ -333,7 +333,10 @@ export function Post({ post, onDelete }: PostProps) {
 
   return (
     <>
-      <Card className="relative rounded-lg border shadow-none bg-card dark:bg-[#252728] text-card-foreground">
+      <Card
+        role="article"
+        className="relative rounded-lg border shadow-none bg-card dark:bg-[#252728] text-card-foreground"
+      >
         <CardHeader>
           <div className="flex items-center">
             <Link href={`/users/${authorId}`}>

@@ -205,11 +205,13 @@ export default function PeopleSidebar() {
   if (sidebarLoading) {
     return (
       <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none lg:block xl:w-[320px]">
-        <div className="space-y-5 rounded-lg border bg-card p-4">
-          <h2 className="text-xl font-semibold">Suggested Friends</h2>
-          <div className="flex flex-col gap-5">
+        <section className="space-y-5 rounded-lg border bg-card p-4">
+          <header>
+            <h2 className="text-xl font-semibold">Suggested Friends</h2>
+          </header>
+          <ul className="flex flex-col gap-5">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div
+              <li
                 key={index}
                 className={`flex items-center justify-between ${
                   index !== 2 ? "border-b pb-3" : ""
@@ -223,11 +225,11 @@ export default function PeopleSidebar() {
                   </div>
                 </div>
                 <Skeleton className="h-8 w-20 rounded-lg" />
-              </div>
+              </li>
             ))}
-          </div>
-        </div>
-        <div className="flex items-center gap-1 mt-2 pl-1 text-xs text-muted-foreground">
+          </ul>
+        </section>
+        <footer className="flex items-center gap-1 mt-2 pl-1 text-xs text-muted-foreground">
           <Image
             src="/favicon.ico"
             alt="logo"
@@ -236,36 +238,39 @@ export default function PeopleSidebar() {
             height={22}
           />
           {`LinkUp Corporation © ${currentYear}`}
-        </div>
+        </footer>
       </aside>
     );
   }
 
   return (
     <aside className="sticky top-[6rem] hidden h-fit w-72 flex-none lg:block xl:w-[320px]">
-      <div className="space-y-5 rounded-lg border bg-card p-4">
-        <h2 className="text-xl font-semibold">Suggested Friends</h2>
-        <div className="flex flex-col gap-5">
-          {suggestedUsers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No suggested friends available right now.
-            </p>
-          ) : (
-            suggestedUsers.map((user, index) => (
-              <SuggestedUser
-                key={user._id}
-                user={user}
-                currentUser={currentUserData}
-                isLast={index === suggestedUsers.length - 1}
-              />
-            ))
-          )}
-        </div>
-      </div>
-      <div className="flex items-center gap-1 mt-2 pl-1 text-xs text-muted-foreground">
+      <section className="space-y-5 rounded-lg border bg-card p-4">
+        <header>
+          <h2 className="text-xl font-semibold">Suggested Friends</h2>
+        </header>
+        {suggestedUsers.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No suggested friends available right now.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-5">
+            {suggestedUsers.map((user, index) => (
+              <li key={user._id}>
+                <SuggestedUser
+                  user={user}
+                  currentUser={currentUserData}
+                  isLast={index === suggestedUsers.length - 1}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      <footer className="flex items-center gap-1 mt-2 pl-1 text-xs text-muted-foreground">
         <Image src="/favicon.ico" alt="logo" priority width={22} height={22} />
         {`LinkUp Corporation © ${currentYear}`}
-      </div>
+      </footer>
     </aside>
   );
 }
