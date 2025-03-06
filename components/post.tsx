@@ -240,6 +240,14 @@ export function Post({ post, onDelete }: PostProps) {
     try {
       await followUserMutation({ targetUserId: authorId });
       toast.success(`You are now following ${authorName}!`);
+
+      const followSound = new Audio("/audio.m4a");
+      const playPromise = followSound.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.error("Audio playback error:", error);
+        });
+      }
     } catch (error) {
       toast.error(
         `Error: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -291,6 +299,14 @@ export function Post({ post, onDelete }: PostProps) {
       try {
         await addBookmarkMutation({ postId: _id });
         toast.success("Added to bookmarks!");
+
+        const bookmarkSound = new Audio("/audio.m4a");
+        const playPromise = bookmarkSound.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((error) => {
+            console.error("Audio playback error:", error);
+          });
+        }
       } catch (error) {
         console.error("Error adding bookmark:", error);
         toast.error("Failed to add bookmark");

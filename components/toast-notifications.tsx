@@ -186,6 +186,17 @@ export function ToastNotifications() {
         );
       }
     });
+
+    if (newIds.length > 0) {
+      const notificationSound = new Audio("/notification.mp3");
+      const playPromise = notificationSound.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.error("Audio playback error:", error);
+        });
+      }
+    }
+
     if (newIds.length > 0) {
       setDisplayedToasts((prev) => new Set([...Array.from(prev), ...newIds]));
     }

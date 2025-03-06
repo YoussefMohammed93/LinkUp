@@ -134,6 +134,15 @@ export default function EditPostDialog({
         visibility,
       });
       toast.success("Post updated successfully!");
+
+      const updateSound = new Audio("/audio.m4a");
+      const playPromise = updateSound.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.error("Audio playback error:", error);
+        });
+      }
+
       onClose();
     } catch (error) {
       console.error(error);

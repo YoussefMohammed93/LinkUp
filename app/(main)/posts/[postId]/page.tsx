@@ -38,14 +38,14 @@ function PostLoadingSkeleton() {
 function PostNotFoundComponent() {
   const router = useRouter();
   return (
-    <main className="w-full h-[80vh] min-w-0 flex items-center justify-center">
+    <div className="w-full h-[80vh] min-w-0 flex items-center justify-center">
       <div className="text-center">
         <h1 className="text-2xl font-bold mb-5">Post Not Found</h1>
         <Button onClick={() => router.push("/")}>
           <Undo className="size-5" /> Go to Home
         </Button>
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -63,7 +63,7 @@ function PostPageContent({ postId }: { postId: string }) {
   }
 
   return (
-    <article className="w-full min-w-0 space-y-5 my-5 pb-10">
+    <div className="w-full min-w-0 space-y-5 my-5 pb-10">
       <Post
         post={{
           ...post,
@@ -78,10 +78,10 @@ function PostPageContent({ postId }: { postId: string }) {
           }
         }}
       />
-      <section className="mt-8 bg-card p-5 rounded-lg border">
+      <div className="mt-8 bg-card p-5 rounded-lg border">
         <Comments postId={typedPostId} postOwnerId={post.authorId} />
-      </section>
-    </article>
+      </div>
+    </div>
   );
 }
 
@@ -117,13 +117,11 @@ export default function PostPage() {
   }
 
   return (
-    <div className="flex">
-      <main className="flex-1">
-        <Suspense fallback={<PostLoadingSkeleton />}>
-          <PostPageContent postId={postId} />
-        </Suspense>
-      </main>
+    <>
+      <Suspense fallback={<PostLoadingSkeleton />}>
+        <PostPageContent postId={postId} />
+      </Suspense>
       <PeopleSidebar />
-    </div>
+    </>
   );
 }

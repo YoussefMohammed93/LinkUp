@@ -296,6 +296,14 @@ export default function Comments({ postId, postOwnerId }: CommentsProps) {
       await createComment({ postId, content: newComment });
       setNewComment("");
       toast.success("Comment added!");
+
+      const commentSound = new Audio("/audio.m4a");
+      const playPromise = commentSound.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.error("Audio playback error:", error);
+        });
+      }
     } catch (error) {
       console.error(error);
       toast.error("Failed to add comment!");
